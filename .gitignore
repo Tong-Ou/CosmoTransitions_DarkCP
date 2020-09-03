@@ -1,3 +1,3 @@
 ./build
-./Implementations/outputs
+./Implementations/outputs/*
 ./cosmoTransitions/*.pyc
