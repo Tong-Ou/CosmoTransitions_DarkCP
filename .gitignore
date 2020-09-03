@@ -1,4 +1,4 @@
-./build
-./Implementations/outputs/*
+build
+Implementations/outputs/*
 .pyc
 .DS_Store
