@@ -1,3 +1,4 @@
 ./build
 ./Implementations/outputs/*
-./cosmoTransitions/*.pyc
+.pyc
+.DS_Store
