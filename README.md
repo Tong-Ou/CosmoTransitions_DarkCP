@@ -1,0 +1,1 @@
+This repository is based on `CosmoTransitions` developed by Carroll L. Wainwright [arXiv paper](https://arxiv.org/pdf/1109.4189.pdf), [github tutorial](https://clwainwright.github.io/CosmoTransitions/).
