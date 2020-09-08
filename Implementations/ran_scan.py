@@ -49,10 +49,6 @@ FILE = sys.argv[1]
 
 t0 = time.clock()
 
-#BASE_PATH = '/home/yikwang/ewpht_data/'
-
-#DATA_PATH = '/data/yikwang/'
-
 #lhr = [0.01,0.05]
 #For tree-level potential, lh=mh^2/2vH^2
 lh = 0.129
@@ -83,7 +79,7 @@ npt = int(sys.argv[2])
 
 scan = []
 
-BASE_PATH = '/home/tong/Chicago/EWPhT/cosmotransition_z2s/Implementations/'
+BASE_PATH = '/home/tong/Chicago/EWPhT/cosmotransition_z2s/Implementations/outputs/'
 
 def physpara(m):
     
@@ -228,14 +224,14 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
     scan_rank = []
                 
     ran.seed(time.time() + rank)
-    plt.figure(figsize=(5,5))
+    plt.figure(figsize=(12,5))
 
     ls_scan = []
     lsh_scan = []
     ls_sfo = []
     lsh_sfo = []
-    yd_scan = []
-    sh_scan = []
+    yd_fo = []
+    sh_fo = []
         
     for n in scan_task:
         
@@ -253,14 +249,6 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
             m2log = ran.uniform(m2min,m2max)
             yd = ran.uniform(ydmin, ydmax)
 
-            ls_scan.append(l2)
-            lsh_scan.append(lm)
-
-    ax = plt.subplot(111)
-    ax.scatter(ls_scan, lsh_scan)
-    plt.show()
-
-'''
             m12 = vh**2
             m22 = m2log**2
             #ch = ran.uniform(chmin,chmax)
@@ -269,19 +257,9 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
             #m12 = 10.**m12log
             #
             #m22 = 10.**m22log
-           # l1 = 0.032
-           # l2 = 0.1
-           # lm = 0.2
-           # #m12 = 60516
-           # #m22 = 1000
-           # ch = 0.2
-           # cs = 0.2
-            
+                      
             v2re = 1000.**2.
-            
                 
-            #mcw = bmcw.model(m12, m22, l1, l2, lm, v2re)
-            
             mcwd = bm.model(m12, m22, l1, l2, lm, yd, v2re)
 
             # Physical parameters
@@ -291,18 +269,16 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
             # Whether this model allows strong first-order transition
             fo, foph, sfo, sfoph = trans(n, mcwd)
             
-            #print '%s, %s, %s, %s, %s' % (vphy, tanbphy, m1phy, m2phy, sintphy)
-            
-            #print 'v_phy: %s, m1: %s, m2: %s, tanbphy: %s' % (vphy, m1phy, m2phy, tanbphy)
-
-            #Tong: If the derived physical parameters are in the given range (constrained by Higgs mass and vev), save the parameters to .npy file.
+            #Tong: Constraints: 1. Higgs mass and vev. 2. SFO condition.
                         
             if all((vphy <= 248., vphy >= 244.)):
                 
                 if all ((m1phy <= 127., m1phy >= 123.)):
+
                     if fo:
-                        yd_scan.append(yd)
-                        sh_scan.append(foph[0])
+                        yd_fo.append(yd)
+                        # v/Tc
+                        sh_fo.append(foph[0])
                 
                 #if all((m1phy <= 127., m1phy >= 123., sintphy <= .4)) or all((m2phy <= 127., m2phy >= 123., (1. - sintphy**2.)**.5 <= .4)):
                     if sfo:
@@ -315,7 +291,6 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
                             print ('Find strong first-order transition!!')
             
                         scan_rank.append([m12, m22, l1, l2, lm, yd, v2re, vphy, tanbphy, m1phy, m2phy, sintphy])
-                        #print ('m12:%s m22:%s lh:%s ls:%s lsh:%s yd:%s'%(m12,m22,l1,l2,lm,yd))
               
                         filename = '%s_%s' % (FILE, rank)
               
@@ -336,6 +311,14 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
                 
                 pass
 
+    np.save(os.path.join(BASE_PATH, 'ls_scan_%s'% (rank)), ls_scan)
+    np.save(os.path.join(BASE_PATH, 'lsh_scan_%s'% (rank)), lsh_scan)
+    np.save(os.path.join(BASE_PATH, 'ls_sfo_%s'% (rank)), ls_sfo)
+    np.save(os.path.join(BASE_PATH, 'lsh_sfo_%s'% (rank)), lsh_sfo)
+    np.save(os.path.join(BASE_PATH, 'yd_fo_%s'% (rank)), yd_fo)
+    np.save(os.path.join(BASE_PATH, 'sh_fo_%s'% (rank)), sh_fo)
+
+    '''
     ax = plt.subplot(121) 
     ax.scatter(ls_scan, lsh_scan, c='black', label='scan points')
     ax.scatter(ls_sfo, lsh_sfo, c='red', label='vc/Tc>1')
@@ -351,24 +334,12 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
     ax.set_ylabel(r'$v_c/T_c$')
     ax.grid(True)
     
-    plt.show()
+    plt.show()    
     '''
                                                   
 scan = getscan(lsr, lshr, vsr, ydr, npt)
 tf = time.clock()
 dt = tf-t0
 print ('Run time: %s' % dt)
-
-# np.load("ran_scan_1.npz")
-
-#npfile.files
-
-#npfile['check']
-
-# npfile['scan_1pht'].item().get('sint')
-
-
-
-
 
 

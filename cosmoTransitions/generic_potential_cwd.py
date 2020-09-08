@@ -325,11 +325,11 @@ class generic_potential():
         return y*T4/(2*np.pi*np.pi)
 
     def ch(self):
-        ch = 1/48 * (9*self.Y1**2 + 3*self.Y2**2 + 2*(6*self.Yt**2 + 12*self.lh + self.lsh))
+        ch = 1/48 * (9*self.Y1**2 + 3*self.Y2**2 + 2*(6*self.Yt**2 + 12*self.lh + 2*self.lsh))
         return ch
 
     def cs(self):
-        cs = 1/12 * (2*self.lsh + 3*self.ls + self.yd**2)
+        cs = 1/12 * (2*self.lsh + 4*self.ls + self.yd**2)
         return cs
 
     def V1T_from_X(self, X, T, include_radiation=False):
