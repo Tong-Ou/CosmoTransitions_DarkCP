@@ -28,6 +28,7 @@ paras_1 = np.load('outputs/test_1.npy')
 paras_2 = np.load('outputs/test_2.npy')
 paras_3 = np.load('outputs/test_3.npy')
 paras = np.concatenate((paras_0, paras_1, paras_2, paras_3),axis = 0)
+np.save('outputs/test.npy', paras)
 
 OUT_PATH = 'outputs/scan_models/'
 
@@ -96,4 +97,4 @@ for index in range(len(paras)):
         
         mt.plotNuclCriterion()
         plt.savefig('%s/S_T_%s.png' % (OUT_PATH, index))
-        
+        plt.clf()

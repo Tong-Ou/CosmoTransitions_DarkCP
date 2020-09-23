@@ -70,6 +70,7 @@ class model(generic_potential.generic_potential):
         self.nx = 3
         
         self.nt = 12
+        self.nd = 1
 
 
     def test(self):
@@ -86,28 +87,41 @@ class model(generic_potential.generic_potential):
   
     
     def boson_massSq(self, X, T):
-        '''
         X = np.asanyarray(X)
         phi1,phi2 = X[...,0], X[...,1]
+
+        ls = self.ls
+        lh = self.lh
+        lsh = self.lsh
+        muh2 = lh*self.vh2
+        mus2 = ls*self.vs2
         
-        # Tong: Ring diagrams. See paper 2.2.
-        ringh = (3.*self.Y1**2./16. + self.Y2**2./16. + self.l1/2 + self.Yt**2./4. + self.lm/12.)*T**2.*phi1**0.
-        rings = (self.l2/4. + self.lm/3.)*T**2.*phi1**0.
+        # Tong: Ring diagrams. See paper 2.2. Does A have ring correction?
+        '''
+        ringh = (3.*self.Y1**2./16. + self.Y2**2./16. + self.lh/2 + self.Yt**2./4. + self.lsh/12.)*T**2.*phi1**0.
+        rings = (self.ls/3. + self.lsh/6. + self.yd**2/12.)*T**2.*phi1**0.
         ringwl = 11.*self.Y1**2.*T**2.*phi1**0./6.
         ringbl = 11.*self.Y2**2.*T**2.*phi1**0./6.
-        ringchi = (3.*self.Y1**2./16. + self.Y2**2./16. + self.l1/2. + self.Yt**2./4. + self.lm/12.)*T**2.*phi1**0.
+        ringchi = (3.*self.Y1**2./16. + self.Y2**2./16. + self.lh/2. + self.Yt**2./4. + self.lsh/12.)*T**2.*phi1**0.
+        '''
 
-        a = -self.m12 + 3.*self.l1*phi1**2. + 0.5*self.lm*phi2**2. + ringh
-        b = self.m22 + 3.*self.l2*phi2**2. + 0.5*self.lm*phi1**2. + rings
-        c = self.lm*phi1*phi2
-        A = .5*(a+b)
-        B = np.sqrt(.25*(a-b)**2. + c**2.)
+        # keep only the h and S dependent terms (take A=0)
+        a = -self.lh*self.vh2 + 3.*self.lh*phi1**2. + 0.5*self.lsh*phi2**2 #+ ringh #mh^2
+        b = -self.ls*self.vs2 + 3.*self.ls*phi2**2. + 0.5*self.lsh*phi1**2. #+ rings #ms^2
+        c = -self.ls*self.vs2 + self.ls*phi2**2. + 0.5*self.lsh*phi1**2. #mA^2
+        mab = self.lsh*phi2*phi1
+        mbc = 0.
+        mac = 0.
+        #Eigenvalues
+        A = c  #for calculation of eigenvalues of ((a,c),(c,b))
+        B = 0.5*(a+b)
+        C = 0.5*np.sqrt(a**2-2*a*b+b**2+4*mab**2)
         
-        mwl = 0.25*self.Y1**2.*phi1**2. + ringwl
+        mwl = 0.25*self.Y1**2.*phi1**2. #+ ringwl
         mwt = 0.25*self.Y1**2.*phi1**2.
         
-        mzgla = 0.25*self.Y1**2.*phi1**2. + ringwl
-        mzglb = 0.25*self.Y2**2.*phi1**2. + ringbl
+        mzgla = 0.25*self.Y1**2.*phi1**2.# + ringwl
+        mzglb = 0.25*self.Y2**2.*phi1**2. #+ ringbl
         mzgc = - 0.25*self.Y1*self.Y2*phi1**2.
         mzglA = .5*(mzgla + mzglb)
         mzglB = np.sqrt(.25*(mzgla-mzglb)**2. + mzgc**2.)
@@ -122,32 +136,33 @@ class model(generic_potential.generic_potential):
         mgl = mzglA - mzglB
         mgt = mzgtA - mzgtB
         
-        mx = -self.m12 + self.l1*phi1**2. + 0.5*self.lm*phi2**2. + ringchi
+        mx = -muh2 + lh*phi1**2. + 0.5*lsh*phi2**2. #+ ringchi
  
-        M = np.array([A+B, A-B, mwl, mwt, mzl, mzt, mgl, mgt, mx])
-        '''
+        M = np.array([A, B+C, B-C, mwl, mwt, mzl, mzt, mgl, mgt, mx])
+        
 
-        M = np.array([100, 100, 100, 100, 100, 100, 100, 100, 100])
+#        M = np.array([100, 100, 100, 100, 100, 100, 100, 100, 100])
 
         M = np.rollaxis(M, 0, len(M.shape))
 
-        dof = np.array([1, 1, self.nwl, self.nwt, self.nzl, self.nzt, self.nzl, self.nzt, self.nx])
+        dof = np.array([1, 1, 1, self.nwl, self.nwt, self.nzl, self.nzt, self.nzl, self.nzt, self.nx])
 
-        c = np.array([1.5, 1.5, 5./6., 5./6., 5./6., 5./6., 5./6., 5./6., 1.5])#check Goldstones
+        c = np.array([1.5, 1.5, 1.5, 5./6., 5./6., 5./6., 5./6., 5./6., 5./6., 1.5])#check Goldstones
                
         return M, dof, c
         
  
     def fermion_massSq(self, X):
         X = np.asanyarray(X)
-        phi1 = X[...,0]
+        phi1, phi2 = X[...,0], X[...,1]
 
         mt = 0.5*self.Yt**2.*phi1**2.
-        M = np.array([mt])
+        md = 2*self.yd**2.*phi2**2.
+        M = np.array([mt, md])
 
         M = np.rollaxis(M, 0, len(M.shape))
 
-        dof = np.array([self.nt])
+        dof = np.array([self.nt, self.nd])
 
         return M, dof
 
@@ -277,7 +292,7 @@ def vsh(m, box, T, n=50, clevs=200, cfrac=.8, **contourParams):
     minZ, maxZ = min(Z.ravel()), max(Z.ravel())
     N = np.linspace(minZ, minZ+(maxZ-minZ)*cfrac, clevs)
     #plt.figure()
-    plt.contour(X,Y,Z, N, **contourParams)
+    plt.contourf(X,Y,Z, N, **contourParams)
     plt.axis(box)
     plt.colorbar()
     #plt.show()

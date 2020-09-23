@@ -17,14 +17,14 @@ Usage functions are created to print/plot the scaning.
 """
 
 import sys
-sys.path.append('/home/tong/Chicago/EWPhT/cosmotransition_z2s/cosmoTransitions/')
+sys.path.append('/home/tong/Work/EWPhT/cosmotransition_z2s/cosmoTransitions/')
 
 #import baseMo_s_b_cw as bmcw
 
 #import baseMo_s_b_cwd as bmcwd
 import baseMo_s as bm
 
-
+import deepdish as dd
 
 import random as ran
 
@@ -58,7 +58,7 @@ lsr = [0., 4*np.pi]
 
 lshr = [0., 4*np.pi]
 
-ydr = [0.01, 10]
+yd2r = [1e-4, 100]
 
 #vh2logr = [0.,4.]
 
@@ -79,7 +79,11 @@ npt = int(sys.argv[2])
 
 scan = []
 
-BASE_PATH = '/home/tong/Chicago/EWPhT/cosmotransition_z2s/Implementations/outputs/'
+BASE_PATH = '/home/tong/Work/EWPhT/cosmotransition_z2s/Implementations/'
+
+logfile = '%s.log' % FILE
+log = open(os.path.join(BASE_PATH, logfile), 'w')
+sys.stdout = log
 
 def physpara(m):
     
@@ -204,14 +208,14 @@ def getscani(i, m):
                 
                                                   
 
-def getscan(l2box, lmbox, m2box, ydbox, npt):
+def getscan(l2box, lmbox, m2box, yd2box, npt):
  
    # l1min,l1max = l1box
     l2min, l2max = l2box
     lmmin, lmmax = lmbox
     #m12min, m12max = m12box
     m2min, m2max = m2box
-    ydmin, ydmax = ydbox
+    yd2min, yd2max = yd2box
     #chmin, chmax = chbox
     #csmin, csmax = csbox
         
@@ -224,14 +228,18 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
     scan_rank = []
                 
     ran.seed(time.time() + rank)
-    plt.figure(figsize=(12,5))
+    #plt.figure(figsize=(12,5))
 
     ls_scan = []
     lsh_scan = []
+    yd_scan = []
     ls_sfo = []
     lsh_sfo = []
+    yd_sfo = []
+    ls_fo = []
+    lsh_fo = []
     yd_fo = []
-    sh_fo = []
+    #sh_fo = []
         
     for n in scan_task:
         
@@ -244,13 +252,16 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
             #l1 = ran.uniform(l1min,l1max)
             l1 = lh
             l2 = ran.uniform(l2min,l2max)
+            #l2 = ran.uniform(0, 5.)
             lm = ran.uniform(lmmin,lmmax)
             #m12log = ran.uniform(m12min,m12max)
             m2log = ran.uniform(m2min,m2max)
-            yd = ran.uniform(ydmin, ydmax)
+            #m2log = ran.uniform(200, 250)
+            yd2 = ran.uniform(yd2min, yd2max)
 
             m12 = vh**2
             m22 = m2log**2
+            yd = np.sqrt(yd2)
             #ch = ran.uniform(chmin,chmax)
             #cs = ran.uniform(csmin,csmax)
             #
@@ -274,34 +285,48 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
             if all((vphy <= 248., vphy >= 244.)):
                 
                 if all ((m1phy <= 127., m1phy >= 123.)):
-
-                    if fo:
-                        yd_fo.append(yd)
-                        # v/Tc
-                        sh_fo.append(foph[0])
-                
+               
                 #if all((m1phy <= 127., m1phy >= 123., sintphy <= .4)) or all((m2phy <= 127., m2phy >= 123., (1. - sintphy**2.)**.5 <= .4)):
                     if sfo:
-                    
                         ch = mcwd.ch()
                         cs = mcwd.cs()
                         if cs*l1*m12 >= ch*l2*m22 or l2*m22**2 >= l1*m12**2:
-                            print ('WARNING: Strong first-order transition found without satisfying conditions.')
+                            diff1 = cs*l1*m12 - ch*l2*m22
+                            diff2 = l2*m22**2-l1*m12**2
+                            print ('\n')
+                            print ('cs*lh*vh2 - ch*ls*vs2 = %s' % diff1)
+                            print ('ls*vs4-lh*vh4 = %s' % diff2)
+                            print ('WARNING: Strong first-order transition found without satisfying high-T conditions.')
                         else:
                             print ('Find strong first-order transition!!')
-            
+                        '''
                         scan_rank.append([m12, m22, l1, l2, lm, yd, v2re, vphy, tanbphy, m1phy, m2phy, sintphy])
               
                         filename = '%s_%s' % (FILE, rank)
               
                         np.save(os.path.join(BASE_PATH, filename), scan_rank)
-
+                        '''
                         ls_sfo.append(l2)
                         lsh_sfo.append(lm)
+                        yd_sfo.append(yd)
+
+                    if fo:
+                        if not sfo:
+                            yd_fo.append(yd)
+                            # v/Tc
+                            # sh_fo.append(foph[0])
+                            ls_fo.append(l2)
+                            lsh_fo.append(lm)
+
+                        scan_rank.append([m12, m22, l1, l2, lm, yd, v2re, vphy, tanbphy, m1phy, m2phy, sintphy])
+                        filename = '%s_%s' % (FILE, rank)
+                        np.save(os.path.join(BASE_PATH, filename), scan_rank)
+
                     else:
             
                         ls_scan.append(l2)
                         lsh_scan.append(lm)
+                        yd_scan.append(yd)
                     
                 else:
                                         
@@ -311,13 +336,22 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
                 
                 pass
 
+    para_dict = {'ls_scan':ls_scan, 'lsh_scan':lsh_scan, 'yd_scan':yd_scan,
+                 'ls_fo':ls_fo, 'lsh_fo':lsh_fo, 'yd_fo':yd_fo,
+                 'ls_sfo':ls_sfo, 'lsh_sfo':lsh_sfo, 'yd_sfo':yd_sfo}
+    filename = '%s_%s_plot.h5' % (FILE, rank)
+    dd.io.save(os.path.join(BASE_PATH, filename), para_dict)
+
+    '''
     np.save(os.path.join(BASE_PATH, 'ls_scan_%s'% (rank)), ls_scan)
     np.save(os.path.join(BASE_PATH, 'lsh_scan_%s'% (rank)), lsh_scan)
     np.save(os.path.join(BASE_PATH, 'ls_sfo_%s'% (rank)), ls_sfo)
     np.save(os.path.join(BASE_PATH, 'lsh_sfo_%s'% (rank)), lsh_sfo)
     np.save(os.path.join(BASE_PATH, 'yd_fo_%s'% (rank)), yd_fo)
     np.save(os.path.join(BASE_PATH, 'sh_fo_%s'% (rank)), sh_fo)
-
+    np.save(os.path.join(BASE_PATH, 'yd_sfo_%s' % (rank)), yd_sfo)
+    np.save(os.path.join(BASE_PATH, 'yd_scan_%s' % (rank)), yd_scan)
+    '''
     '''
     ax = plt.subplot(121) 
     ax.scatter(ls_scan, lsh_scan, c='black', label='scan points')
@@ -337,7 +371,7 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
     plt.show()    
     '''
                                                   
-scan = getscan(lsr, lshr, vsr, ydr, npt)
+scan = getscan(lsr, lshr, vsr, yd2r, npt)
 tf = time.clock()
 dt = tf-t0
 print ('Run time: %s' % dt)

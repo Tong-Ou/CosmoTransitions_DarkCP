@@ -735,8 +735,8 @@ def _tunnelFromPhaseAtT(T, phases, start_phase, V, dV,
                 [x1,x0], V_, dV_, callback_data=T,
                 **fullTunneling_params)
             #Tong: Plot tunneling path and bubble profile
-            if makePlot and abs(nuclCriterion(tobj.action, T))<=0.05:
-                makePlots(tobj, V_)
+            if makePlot and abs(nuclCriterion(tobj.action, T))<=0.02:
+                makePlots(tobj, V_, cmap='RdGy')
             tdict['instanton'] = tobj
             tdict['action'] = tobj.action
             tdict['trantype'] = 1
@@ -1115,7 +1115,7 @@ def makePlots(tobj, V_, xmin=-300, xmax=300, ymin=-400, ymax=400, n=50, clevs=50
     Z = V_(XY)
     minZ, maxZ = min(Z.ravel()), max(Z.ravel())
     N = np.linspace(minZ, minZ + (maxZ-minZ)*cfrac, clevs)
-    plt.contour(X,Y,Z, N, **contourParams)
+    plt.contourf(X,Y,Z, N, **contourParams)
     # Tunneling path
     #print(tobj.Phi[...,1][0])
     #print(tobj.Phi[...,1][-1])

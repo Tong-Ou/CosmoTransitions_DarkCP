@@ -17,8 +17,8 @@ import baseMo_s as bmt
 import matplotlib.pyplot as plt
 import numpy as np
 
-paras = np.load('outputs/test_0.npy')
-para = paras[12]
+paras = np.load('outputs/test.npy')
+para = paras[33]
 print('The parameters are:')
 print 'vh2:%s vs2:%s lh:%s ls:%s lsh:%s yd:%s v2re:%s' % (para[0],para[1],para[2],para[3],para[4],para[5],para[6])
 
@@ -30,7 +30,7 @@ print("\n")
 
 print("The T=0 potential of the model reads")
 
-bmt.vsh(mt, [-300., 300., -400., 400.], 0.)
+bmt.vsh(mt, [-300., 300., -400., 400.], 0., cmap='RdGy')
 
 print("\n")
 print("\n")
@@ -69,9 +69,8 @@ print("\n \n All the tunnelings/phase transitions of such a model are")
 
 mt.prettyPrintTnTrans()
 
-#import matplotlib.pyplot as plt
-#plt.figure()
-#mt.plotNuclCriterion()
-#plt.show()
+plt.figure()
+mt.plotNuclCriterion()
+plt.show()
 
 

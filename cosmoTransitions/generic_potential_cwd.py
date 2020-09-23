@@ -17,7 +17,7 @@ from __future__ import print_function
 import numpy as np
 from scipy import optimize
 import sys
-sys.path.append('/home/tong/Chicago/EWPhT/cosmotransition_z2sb/cosmoTransitions/')
+sys.path.append('/home/tong/Work/EWPhT/cosmotransition_z2s/cosmoTransitions/')
 
 #from cosmoTransitions.finiteT_test import Jb_spline as Jb
 from finiteT_test import Jb_spline as Jb 
@@ -284,7 +284,7 @@ class generic_potential():
 
     def V1T(self, bosons, fermions, T, include_radiation=False):
         """
-        The one-loop finite-temperature potential.
+        The one-loop finite-temperature potential calculated by spline integral.
 
         This is generally not called directly, but is instead used by
         :func:`Vtot`.
@@ -341,13 +341,16 @@ class generic_potential():
         """
         T = np.asanyarray(T, dtype=float)
         X = np.asanyarray(X, dtype=float)
-        '''
+
         bosons = self.boson_massSq(X,T)
         fermions = self.fermion_massSq(X)
         y = self.V1T(bosons, fermions, T, include_radiation)   
+
         '''
+        # High-T expansion
         phi1, phi2 = X[...,0], X[...,1]
         y = 0.5*self.ch()*phi1**2*T**2 + 0.5*self.cs()*phi2**2*T**2
+        '''
         return y
 
     def Vtot(self, X, T, include_radiation=False):
