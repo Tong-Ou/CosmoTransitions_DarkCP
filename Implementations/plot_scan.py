@@ -49,8 +49,8 @@ for i in range(ncpu):
 
 lh = 0.129
 vh2 = 246.**2 #pay attention to the dtype!!
-vs2 = 225.**2
-ls = 0.25
+vs2 = 150.**2
+ls = 2.
 ch = (9*0.65**2+3*0.35**2+2*(6*0.9911**2+12*lh))/48
 
 def yd_max(lsh):
@@ -82,7 +82,7 @@ plt.scatter(lsh_scan, np.square(yd_scan), c='black', label='Scan Points')
 plt.scatter(lsh_fo, np.square(yd_fo), c='blue', label='First-order Trans')
 plt.scatter(lsh_sfo, np.square(yd_sfo), c='red', label=r'$v_c/T_c>1$')
 if not fullScan:
-    plt.plot(lsh, yd_max(lsh), linewidth=2., c='black', label=r'Upper bound for $|y_d|^2$')
+    plt.plot(lsh, yd_max(lsh), linewidth=2., c='black', label=r'Upper bound for $|y_d|^2$ from high-T')
 #plt.ylim(0,5)
 plt.legend()
 plt.xlabel(r'$\lambda_{SH}$')

@@ -51,8 +51,8 @@ t0 = time.clock()
 
 #lhr = [0.01,0.05]
 #For tree-level potential, lh=mh^2/2vH^2
-lh = 0.129
-vh = 246.
+lhr = [0.01, 0.05]
+vhr = [240., 260.]
 
 lsr = [0., 4*np.pi]
 
@@ -87,10 +87,10 @@ def physpara(m):
     print ('Minimum: [%s, %s]' % (vp[0],vp[1]))
 
     #check whether this is global minimum
-    #VS = np.sqrt(m.vs2)
-    #vs = m.findMinimum([np.array([0.1, VS])], T=0.)
-    #if m.Vtot(vs, T=0.) < m.Vtot(vp, T=0.):
-     #   return None
+    VS = np.sqrt(m.vs2)
+    vs = m.findMinimum([np.array([0.1, VS])], T=0.)
+    if m.Vtot(vs, T=0.) < m.Vtot(vp, T=0.):
+        return None
     
     v2phy = vp[0]**2.
     
@@ -210,12 +210,12 @@ def getscani(i, m):
                 
                                                   
 
-def getscan(l2box, lmbox, m2box, ydbox, npt):
+def getscan(l1box, l2box, lmbox, m1box, m2box, ydbox, npt):
  
-   # l1min,l1max = l1box
+    l1min,l1max = l1box
     l2min, l2max = l2box
     lmmin, lmmax = lmbox
-    #m12min, m12max = m12box
+    m1min, m1max = m1box
     m2min, m2max = m2box
     ydmin, ydmax = ydbox
     #chmin, chmax = chbox
@@ -243,7 +243,7 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
     yd_fo = []
     #sh_fo = []
         
-    for n in scan_task:
+    for n in range(npt):
         
         if n%size != rank: 
            continue
@@ -258,16 +258,17 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
             # Tong: generate random number between the given min and max
             # Why not create a np.linspace and scan one by one? - Not realistic for 5 parameters
             #l1 = ran.uniform(l1min,l1max)
-            l1 = lh
+            l1 = 0.129
             l2 = ran.uniform(l2min,l2max)
             #l2 = ran.uniform(0, 5.)
             lm = ran.uniform(lmmin,lmmax)
             #m1log = ran.uniform(m1min,m1max)
+            m1log = 246.
             m2log = ran.uniform(m2min,m2max)
-            #m2log = ran.uniform(200, 250)
+            #m2log = ran.uniform(100, 200)
             yd = ran.uniform(ydmin, ydmax)
 
-            m12 = vh**2
+            m12 = m1log**2
             m22 = m2log**2
             #yd = np.sqrt(yd2)
             #ch = ran.uniform(chmin,chmax)
@@ -279,18 +280,23 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
                       
             v2re = 600.**2.
     
-            # Zero-T global minimum condition
+            # Zero-T global minimum condition (valid at tree-level)
+            
             if l2*m22**2 >= l1*m12**2:
-                #scan_task += 1
+                npt += 1
                 continue
                 
+                
             mcwd = bm.model(m12, m22, l1, l2, lm, yd, v2re)
+            print ('Parameters: vh %s, vs %s, lh %s, ls %s, lsh %s, yd %s' % (m1log, m2log, l1, l2, lm, yd))
 
             # Physical parameters
             phy = physpara(mcwd)
             if phy is None:
                 continue
             vphy, tanbphy, m1phy, m2phy, sintphy = phy[0]**.5, phy[1], phy[2], phy[3], phy[4]
+            print ('Higgs mass: %s' % m1phy)
+            print ('\n')
 
             #Tong: Constraints: 1. Higgs mass and vev.
                         
@@ -357,7 +363,7 @@ def getscan(l2box, lmbox, m2box, ydbox, npt):
     dd.io.save(os.path.join(BASE_PATH, filename), para_dict)
 
                                                  
-scan = getscan(lsr, lshr, vsr, ydr, npt)
+scan = getscan(lhr, lsr, lshr, vhr, vsr, ydr, npt)
 tf = time.clock()
 dt = tf-t0
 print ('Run time: %s' % dt)

@@ -9,7 +9,7 @@ Created on Fri Feb  9 20:33:49 2018
 """
 
 import sys
-sys.path.append('/home/tong/Chicago/EWPhT/cosmotransition_z2s/cosmoTransitions/')
+sys.path.append('/home/tong/Work/EWPhT/cosmotransition_z2s/cosmoTransitions/')
 
 #import baseMo_s_t as bmt
 import baseMo_s as bmt
@@ -17,8 +17,8 @@ import baseMo_s as bmt
 import matplotlib.pyplot as plt
 import numpy as np
 
-paras = np.load('outputs/test.npy')
-para = paras[33]
+paras = np.load('outputs/full_potential/full_scan/withCW/scan.npy')
+para = paras[8]
 print('The parameters are:')
 print 'vh2:%s vs2:%s lh:%s ls:%s lsh:%s yd:%s v2re:%s' % (para[0],para[1],para[2],para[3],para[4],para[5],para[6])
 
@@ -30,8 +30,8 @@ print("\n")
 
 print("The T=0 potential of the model reads")
 
-bmt.vsh(mt, [-300., 300., -400., 400.], 0., cmap='RdGy')
-
+bmt.vsh(mt, [-300., 300., -400., 400.], 0.)
+'''
 print("\n")
 print("\n")
 
@@ -63,7 +63,7 @@ print("\n \n")
 
 print("Now let's find the corresponding tunneliings:")
 
-mt.findAllTransitions(makePlot=True)
+mt.findAllTransitions(makePlot=False)
 
 print("\n \n All the tunnelings/phase transitions of such a model are")
 
@@ -71,6 +71,7 @@ mt.prettyPrintTnTrans()
 
 plt.figure()
 mt.plotNuclCriterion()
+'''
 plt.show()
 
 

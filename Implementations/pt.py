@@ -9,8 +9,9 @@ Created on Fri Feb  9 20:33:49 2018
 """
 
 import sys
-sys.path.append('/home/tong/Chicago/EWPhT/cosmotransition_z2s/cosmoTransitions/')
+sys.path.append('/home/tong/Work/EWPhT/cosmotransition_z2s/cosmoTransitions/')
 
+import os
 #import baseMo_s_t as bmt
 import baseMo_s as bmt
 
@@ -23,14 +24,15 @@ comm = mpi.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
-paras_0 = np.load('outputs/test_0.npy')
-paras_1 = np.load('outputs/test_1.npy')
-paras_2 = np.load('outputs/test_2.npy')
-paras_3 = np.load('outputs/test_3.npy')
-paras = np.concatenate((paras_0, paras_1, paras_2, paras_3),axis = 0)
-np.save('outputs/test.npy', paras)
+FILE = sys.argv[1]
+OUT_PATH = sys.argv[2]
 
-OUT_PATH = 'outputs/scan_models/'
+paras_0 = np.load('%s_0.npy' % FILE)
+paras_1 = np.load('%s_1.npy' % FILE)
+paras_2 = np.load('%s_2.npy' % FILE)
+paras_3 = np.load('%s_3.npy' % FILE)
+paras = np.concatenate((paras_0, paras_1, paras_2, paras_3),axis = 0)
+np.save('%s.npy' % FILE, paras)
 
 fig = plt.figure()
 
@@ -38,6 +40,12 @@ for index in range(len(paras)):
     if index%size != rank:
         continue
     else:
+        #logfile = '%s/pt_%s.log' % (OUT_PATH, rank)
+        #if index==rank and os.path.exists(logfile):
+         #  os.remove(logfile)
+        #log = open(logfile, 'a')
+        #sys.stdout = log
+
         para = paras[index]
         print('The parameters are:')
         print( 'Index: %s vh2:%s vs2:%s lh:%s ls:%s lsh:%s yd:%s v2re:%s' % (index, para[0],para[1],para[2],para[3],para[4],para[5],para[6]))
@@ -50,10 +58,10 @@ for index in range(len(paras)):
         
         print("The T=0 potential of the model reads")
         
-        bmt.vsh(mt, [-300., 300., -400., 400.], 0.)
+        bmt.vsh(mt, [-300., 300., -400., 400.], 0., cmap='RdGy')
         plt.savefig('%s/V0_%s.png' % (OUT_PATH, index))
         plt.clf()
-        
+'''        
         print("\n")
         print("\n")
         
@@ -88,13 +96,24 @@ for index in range(len(paras)):
         print("\n \n")
         
         print("Now let's find the corresponding tunneliings:")
-        
-        mt.findAllTransitions()
-        
+       
+        try:
+            mt.findAllTransitions()
+        except KeyError as err:
+            print ('Skipping due to KeyError: %s...' % err)
+            continue
+        except ValueError as err:
+            print ('Skipping due to ValueError: %s...' % err)
+            continue
+        except:
+            print ('Skipping due to unexpected error...')
+            continue
+
         print("\n \n All the tunnelings/phase transitions of such a model are")
-        
+
         mt.prettyPrintTnTrans()
-        
+
         mt.plotNuclCriterion()
         plt.savefig('%s/S_T_%s.png' % (OUT_PATH, index))
         plt.clf()
+'''
