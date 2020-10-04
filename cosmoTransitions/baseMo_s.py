@@ -96,18 +96,18 @@ class model(generic_potential.generic_potential):
         muh2 = lh*self.vh2
         mus2 = ls*self.vs2
         
-        # Tong: Ring diagrams. See paper 2.2. Does A have ring correction?
-        '''
+        # Tong: Mass corrections. See paper 2.2. Does A have mass correction?
+        
         ringh = (3.*self.Y1**2./16. + self.Y2**2./16. + self.lh/2 + self.Yt**2./4. + self.lsh/12.)*T**2.*phi1**0.
         rings = (self.ls/3. + self.lsh/6. + self.yd**2/12.)*T**2.*phi1**0.
         ringwl = 11.*self.Y1**2.*T**2.*phi1**0./6.
         ringbl = 11.*self.Y2**2.*T**2.*phi1**0./6.
         ringchi = (3.*self.Y1**2./16. + self.Y2**2./16. + self.lh/2. + self.Yt**2./4. + self.lsh/12.)*T**2.*phi1**0.
-        '''
+        
 
         # keep only the h and S dependent terms (take A=0)
-        a = -self.lh*self.vh2 + 3.*self.lh*phi1**2. + 0.5*self.lsh*phi2**2 #+ ringh #mh^2
-        b = -self.ls*self.vs2 + 3.*self.ls*phi2**2. + 0.5*self.lsh*phi1**2. #+ rings #ms^2
+        a = -self.lh*self.vh2 + 3.*self.lh*phi1**2. + 0.5*self.lsh*phi2**2 + ringh #mh^2
+        b = -self.ls*self.vs2 + 3.*self.ls*phi2**2. + 0.5*self.lsh*phi1**2. + rings #ms^2
         c = -self.ls*self.vs2 + self.ls*phi2**2. + 0.5*self.lsh*phi1**2. #mA^2
         mab = self.lsh*phi2*phi1
         mbc = 0.
@@ -117,11 +117,11 @@ class model(generic_potential.generic_potential):
         B = 0.5*(a+b)
         C = 0.5*np.sqrt(a**2-2*a*b+b**2+4*mab**2)
         
-        mwl = 0.25*self.Y1**2.*phi1**2. #+ ringwl
+        mwl = 0.25*self.Y1**2.*phi1**2. + ringwl
         mwt = 0.25*self.Y1**2.*phi1**2.
         
-        mzgla = 0.25*self.Y1**2.*phi1**2.# + ringwl
-        mzglb = 0.25*self.Y2**2.*phi1**2. #+ ringbl
+        mzgla = 0.25*self.Y1**2.*phi1**2. + ringwl
+        mzglb = 0.25*self.Y2**2.*phi1**2. + ringbl
         mzgc = - 0.25*self.Y1*self.Y2*phi1**2.
         mzglA = .5*(mzgla + mzglb)
         mzglB = np.sqrt(.25*(mzgla-mzglb)**2. + mzgc**2.)
@@ -136,7 +136,7 @@ class model(generic_potential.generic_potential):
         mgl = mzglA - mzglB
         mgt = mzgtA - mzgtB
         
-        mx = -muh2 + lh*phi1**2. + 0.5*lsh*phi2**2. #+ ringchi
+        mx = -muh2 + lh*phi1**2. + 0.5*lsh*phi2**2. + ringchi
  
         M = np.array([A, B+C, B-C, mwl, mwt, mzl, mzt, mgl, mgt, mx])
         
@@ -282,17 +282,29 @@ def vs1T(m, box, T, n=50):
 make use of the Vtot method in generic_potential
 """
 
-def vsh(m, box, T, n=50, clevs=200, cfrac=.8, **contourParams):
+def vsh(m, box, T, n=50, clevs=200, cfrac=1., **contourParams):
     xmin,xmax,ymin,ymax = box
     X = np.linspace(xmin, xmax, n).reshape(n,1)*np.ones((1,n))
     Y = np.linspace(ymin, ymax, n).reshape(1,n)*np.ones((n,1))
     XY = np.zeros((n, n, 2))
     XY[...,0], XY[...,1] = X, Y
     Z = m.Vtot(XY, T)
+    # Take the log to amplify variation around minimum
+    #Z = np.log(Z)
     minZ, maxZ = min(Z.ravel()), max(Z.ravel())
-    N = np.linspace(minZ, minZ+(maxZ-minZ)*cfrac, clevs)
+    if minZ > 0:
+        Z = np.log(Z)
+    minZ, maxZ = min(Z.ravel()), max(Z.ravel())
+    N1 = np.linspace(minZ, minZ+(maxZ-minZ)*cfrac, clevs)
     #plt.figure()
-    plt.contourf(X,Y,Z, N, **contourParams)
+    cset1 = plt.contourf(X,Y,Z,N1, **contourParams)
+    N2 = np.linspace(minZ, minZ+(maxZ-minZ)*cfrac, clevs/4)
+    cset2 = plt.contour(X,Y,Z,N2, colors='white')
+    for c in cset2.collections:
+        c.set_linestyle('dotted')
+        c.set_linewidth(0.8)
     plt.axis(box)
-    plt.colorbar()
+    plt.xlabel('h')
+    plt.ylabel('S')
+    plt.colorbar(cset1)
     #plt.show()

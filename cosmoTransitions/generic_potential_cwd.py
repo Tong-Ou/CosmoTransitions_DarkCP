@@ -260,7 +260,7 @@ class generic_potential():
         dof = np.array([0.,0.])
         return massSq, dof
 
-    def V1(self, bosons, fermions):
+    def V1(self, X, T):
         """
         The one-loop corrections to the zero-temperature potential
         using MS-bar renormalization.
@@ -268,19 +268,30 @@ class generic_potential():
         This is generally not called directly, but is instead used by
         :func:`Vtot`.
         """
-        '''
+        X = np.asanyarray(X, dtype=float)
+        T = np.asanyarray(T, dtype=float)
+        bosons = self.boson_massSq(X, T)
+        fermions = self.fermion_massSq(X)
         #Tong: Ignore CW correction at this moment.
         # This does not need to be overridden.
         m2, n, c = bosons
-        y = np.sum(n*m2*m2 * (np.log(np.abs(m2/self.renormScaleSq) + 1e-100)
-                              - c), axis=-1)
+        y = np.sum(n*m2*m2 * (np.log(np.abs(m2/self.renormScaleSq) + 1e-100)- c), axis=-1)
         m2, n = fermions
         c = 1.5
-        y -= np.sum(n*m2*m2 * (np.log(np.abs(m2/self.renormScaleSq) + 1e-100)
-                               - c), axis=-1)
+        y -= np.sum(n*m2*m2 * (np.log(np.abs(m2/self.renormScaleSq) + 1e-100)- c), axis=-1)
         return y/(64.*np.pi*np.pi)
+
+    def counterterm(self, X):
         '''
-        return 0
+        Counterterms to eliminate impacts of VCW on physical vacuum.
+        '''
+        X = np.asanyarray(X, dtype=float)
+        vphy = [246., 0.]
+        phi1 = X[..., 0]
+        #vphy = np.asanyarray(vphy, dtype=float)
+        delta_lh = (self.gradVCW(vphy, T=0.)[0] - vphy[0]*self.d2VCW(vphy, T=0.)[0][0])/(2*vphy[0]**3)
+        delta_muh = (3*self.gradVCW(vphy, T=0.)[0] - vphy[0]*self.d2VCW(vphy, T=0.)[0][0])/(2*vphy[0])
+        return -0.5*delta_muh*phi1**2 + 0.25*delta_lh*phi1**4
 
     def V1T(self, bosons, fermions, T, include_radiation=False):
         """
@@ -341,7 +352,7 @@ class generic_potential():
         """
         T = np.asanyarray(T, dtype=float)
         X = np.asanyarray(X, dtype=float)
-
+        
         bosons = self.boson_massSq(X,T)
         fermions = self.fermion_massSq(X)
         y = self.V1T(bosons, fermions, T, include_radiation)   
@@ -371,19 +382,21 @@ class generic_potential():
             terms from the effective potential. Useful for calculating
             differences or derivatives.
         """
+        '''
+        # High-T expansion
         V1T = self.V1T_from_X(X,T)
         T = np.asanyarray(T, dtype=float)
         X = np.asanyarray(X, dtype=float)
+        y = self.V0(X) + V1T
         '''
+        T = np.asanyarray(T, dtype=float)
+        X = np.asanyarray(X, dtype=float)
         bosons = self.boson_massSq(X,T)
         fermions = self.fermion_massSq(X)
         y = self.V0(X)
-        y += self.V1(bosons, fermions)
+        y += self.V1(X, T)
+        y += self.counterterm(X)
         y += self.V1T(bosons, fermions, T, include_radiation=False)
-        '''
-        #phi1,phi2 = X[...,0], X[...,1]
-        y = self.V0(X) + V1T
-        #T2 = T*T
         return y
 
     def DVtot(self, X, T):
@@ -435,6 +448,18 @@ class generic_potential():
             f = self._gradV0
         return f(X)
 
+    def gradVCW(self, X, T):
+        '''
+        Calculate the gradient of VCW for counterterm calculation.
+        '''
+        try:
+            f = self._gradVCW
+        except:
+            self._gradVCW = helper_functions.gradientFunction(
+                    self.V1, self.x_eps, self.Ndim, self.deriv_order)
+            f = self._gradVCW
+        T = np.asanyarray(T)[...,np.newaxis,np.newaxis]
+        return f(X, T)
 
     def dgradV_dT(self, X, T):
         """
@@ -511,6 +536,20 @@ class generic_potential():
         # the helper function.
         T = np.asanyarray(T)[...,np.newaxis]
         return f(X,T, False)
+
+    def d2VCW(self, X, T):
+        '''
+        Calculates the Hessian matrix for CW potential for counterterm calculation.
+        ''' 
+        try:
+            f = self._d2VCW
+        except:
+            
+            self._d2VCW = helper_functions.hessianFunction(
+                self.V1, self.x_eps, self.Ndim, self.deriv_order)
+            f = self._d2VCW
+        T = np.asanyarray(T)[...,np.newaxis]
+        return f(X, T)
 
     def energyDensity(self,X,T,include_radiation=True):
         T_eps = self.T_eps
