@@ -112,6 +112,7 @@ def traceMinimum(f, d2f_dxdt, d2f_dx2, x0, t0, tstop, dtstart, deltaX_target,
         if abs(linalg.det(M)) < (1e-3*np.max(abs(M)))**Ndim:
             # Assume matrix is singular
             return None, False
+        #print ('calculating d2f_dxdt')
         b = -d2f_dxdt(x,t)
         eigs = linalg.eigvalsh(M)
         try:

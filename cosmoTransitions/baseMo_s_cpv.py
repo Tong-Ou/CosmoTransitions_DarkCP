@@ -21,7 +21,7 @@ Bare parameters entering the tree level potential can be called by the method mo
 import numpy as np
 import matplotlib.pyplot as plt
 #from cosmoTransitions import generic_potential
-import generic_potential_cwd as generic_potential
+import generic_potential_cwd_cpv as generic_potential
 
 """        
         self.Y1 = 2*80.4/246
@@ -41,7 +41,7 @@ Adding two usage functions under the class 'model':
 
 class model(generic_potential.generic_potential):
 
-    def init(self, vh2, vs2, lh, ls, lsh, ks2, yd, thetaY, v2re):
+    def init(self, vh2, vs2, lh, ls, lsh, ks2, yd, thetaY, m0, v2re):
         
         self.vh2 = vh2
         self.vs2 = vs2
@@ -51,6 +51,7 @@ class model(generic_potential.generic_potential):
         self.ks2 = ks2
         self.yd = yd
         self.thetaY = thetaY
+        self.m0 = m0
         #self.ch = ch
         #self.cs = cs
                 
@@ -83,8 +84,7 @@ class model(generic_potential.generic_potential):
         X = np.asanyarray(X)
         phi1,phi2,phi3 = X[...,0], X[...,1], X[...,2]
         #phi1 -> h, phi2 -> s, phi3 -> A
-        r = 0.25 * (self.lh*(phi1**2-self.vh2)**2 + self.ls*(phi2**2+phi3**2-self.vs2)**2 
-                + self.lsh*phi1**2*(phi2**2+phi3**2)) + ks2*(phi2**2-phi3**2)
+        r = 0.25 * (self.lh*(phi1**2-self.vh2)**2 + self.ls*(phi2**2+phi3**2-self.vs2)**2 + self.lsh*phi1**2*(phi2**2+phi3**2)) + self.ks2*(phi2**2-phi3**2)
         #r = self.lh*phi1**4 - 2*self.lh*self.vh2*phi1**2 + self.ls*phi2**4 - 2*self.ls*self.vs2*phi2**2 + self.lsh*phi1**2*phi2**2
         return r
   
@@ -92,6 +92,7 @@ class model(generic_potential.generic_potential):
     def boson_massSq(self, X, T):
         X = np.asanyarray(X)
         phi1,phi2,phi3 = X[...,0], X[...,1], X[...,2]
+        #print ('phi3 %s' % phi3)
 
         ls = self.ls
         lh = self.lh
@@ -107,15 +108,47 @@ class model(generic_potential.generic_potential):
         ringbl = 11.*self.Y2**2.*T**2.*phi1**0./6.
         ringchi = (3.*self.Y1**2./16. + self.Y2**2./16. + self.lh/2. + self.Yt**2./4. + self.lsh/12.)*T**2.*phi1**0.
         
-        a = -muh2 + 3.*self.lh*phi1**2. + 0.5*self.lsh*(phi2**2+phi3**2) + ringh #mh^2
-        b = -mus2 + 3.*self.ls*phi2**2. + self.ls*phi3**2. + 0.5*self.lsh*phi1**2. + 2.*ks2 + rings #ms^2
-        c = -mus2 + 3.*self.ls*phi3**2. + self.ls*phi2**2. + 0.5*self.lsh*phi1**2. - 2.*ks2 #mA^2
-        mab = self.lsh*phi2*phi1
-        mbc = 2.*self.ls*phi2*phi3
-        mac = self.lsh*phi1*phi3
-        #Eigenvalues
-        msq = np.array([[a,mab,mac],[mab,b,mbc],[mac,mbc,c]])
-        msqeig, v = np.linalg.eig(msq)
+        try:
+            a = -muh2 + 3.*self.lh*phi1**2. + 0.5*self.lsh*(phi2**2+phi3**2) #mh^2
+            b = -mus2 + 3.*self.ls*phi2**2. + self.ls*phi3**2. + 0.5*self.lsh*phi1**2. + 2.*self.ks2 #ms^2
+            c = -mus2 + 3.*self.ls*phi3**2. + self.ls*phi2**2. + 0.5*self.lsh*phi1**2. - 2.*self.ks2 #mA^2
+            mab = self.lsh*phi2*phi1
+            mbc = 2.*self.ls*phi2*phi3
+            mac = self.lsh*phi1*phi3
+            #Eigenvalues
+            msq = np.array([[a,mab,mac],[mab,b,mbc],[mac,mbc,c]], dtype=float)
+            msqeig = np.linalg.eigvalsh(msq)
+            #msqeig = msqeig.tolist()
+        except:
+            msqeig = [] 
+            if phi1.ndim == 1:
+                for i in range(len(phi1)):
+                    a = -muh2 + 3.*self.lh*phi1[i]**2. + 0.5*self.lsh*(phi2[i]**2+phi3[i]**2) #mh^2
+                    b = -mus2 + 3.*self.ls*phi2[i]**2. + self.ls*phi3[i]**2. + 0.5*self.lsh*phi1[i]**2. + 2.*self.ks2 #ms^2
+                    c = -mus2 + 3.*self.ls*phi3[i]**2. + self.ls*phi2[i]**2. + 0.5*self.lsh*phi1[i]**2. - 2.*self.ks2 #mA^2
+                    mab = self.lsh*phi2[i]*phi1[i]
+                    mbc = 2.*self.ls*phi2[i]*phi3[i]
+                    mac = self.lsh*phi1[i]*phi3[i]
+                    #Eigenvalues
+                    msq = np.array([[a,mab,mac],[mab,b,mbc],[mac,mbc,c]])
+                    eig = np.linalg.eigvalsh(msq)
+                    msqeig.append(eig)
+            else:
+                for i in range(phi1.shape[0]):
+                    msqeig_dir = []
+                    for j in range(phi1.shape[1]):
+                        a = -muh2 + 3.*self.lh*phi1[i][j]**2. + 0.5*self.lsh*(phi2[i][j]**2+phi3[i][j]**2)
+                        b = -mus2 + 3.*self.ls*phi2[i][j]**2. + self.ls*phi3[i][j]**2. + 0.5*self.lsh*phi1[i][j]**2. + 2.*self.ks2
+                        c = -mus2 + 3.*self.ls*phi3[i][j]**2. + self.ls*phi2[i][j]**2. + 0.5*self.lsh*phi1[i][j]**2. - 2.*self.ks2
+                        mab = self.lsh*phi2[i][j]*phi1[i][j]
+                        mbc = 2.*self.ls*phi2[i][j]*phi3[i][j]
+                        mac = self.lsh*phi1[i][j]*phi3[i][j]
+                        msq = np.array([[a,mab,mac],[mab,b,mbc],[mac,mbc,c]])
+                        eig = np.linalg.eigvalsh(msq)
+                        msqeig_dir.append(eig)
+                    msqeig.append(msqeig_dir)
+        msqeig = np.asanyarray(msqeig, dtype=float)
+
         '''
         A = c  #for calculation of eigenvalues of ((a,c),(c,b))
         B = 0.5*(a+b)
@@ -143,8 +176,8 @@ class model(generic_potential.generic_potential):
         
         mx = -muh2 + lh*phi1**2. + 0.5*lsh*phi2**2. + ringchi
  
-        M = np.array([msqeig[0], msqeig[1], msqeig[2], mwl, mwt, mzl, mzt, mgl, mgt, mx])
-        
+        M = np.array([msqeig[...,0], msqeig[...,1], msqeig[...,2], mwl, mwt, mzl, mzt, mgl, mgt, mx])
+        #print ('M before rollaxis: %s' % M)
 
 #        M = np.array([100, 100, 100, 100, 100, 100, 100, 100, 100])
 
@@ -162,8 +195,7 @@ class model(generic_potential.generic_potential):
         phi1, phi2, phi3 = X[...,0], X[...,1], X[...,2]
 
         mt = 0.5*self.Yt**2.*phi1**2.
-        md = self.m0**2 + 0.5*self.yd**2*(phi2**2+phi3**2) 
-            + self.m0*self.yd*(phi2*np.cos(self.thetaY)-phi3*np.sin(self.thetaY))/2**0.5
+        md = self.m0**2 + 0.5*self.yd**2*(phi2**2+phi3**2)+self.m0*self.yd*(phi2*np.cos(self.thetaY)-phi3*np.sin(self.thetaY))/2**0.5
         M = np.array([mt, md])
 
         M = np.rollaxis(M, 0, len(M.shape))
@@ -176,7 +208,7 @@ class model(generic_potential.generic_potential):
     def approxZeroTMin(self):
         # There are generically two minima at zero temperature in this model,
         # and we want to include both of them.
-        return [np.array([246., 0.1, np.pi/2.])]
+        return [np.array([246., 0.1, 0.1])]
 
 
     def forbidPhaseCrit(self, X):
@@ -231,6 +263,16 @@ class model(generic_potential.generic_potential):
             plt.plot(p.X[...,1], p.X[...,0], **plotArgs)
         plt.xlabel(R"$v_s(T)$")
         plt.ylabel(R"$v_h(T)$")
+
+    def plotPhase2DS(self, **plotArgs):
+        import matplotlib.pyplot as plt
+        if self.phases is None:
+            self.getPhases()
+        for key, p in self.phases.items():
+            plt.plot(p.X[...,1], p.X[...,2], **plotArgs)
+        plt.xlabel(R"$v_s(T)$")
+        plt.ylabel(R"$v_A(T)$")
+
     
 """
 Here defines some useful functions to visualize the tree level potential
@@ -289,14 +331,16 @@ make use of the Vtot method in generic_potential
 """
 
 def vsh(m, box, T, n=50, clevs=200, cfrac=1., **contourParams):
-    xmin,xmax,ymin,ymax = box
+    xmin,xmax,ymin,ymax,offset = box
     # * is elementwise multiplication for ndarrays
     # E.g., a*b=c, c[1][2]=a[1]*b[2]
-    X = np.linspace(xmin, xmax, n).reshape(n,1)*np.ones((1,n))
-    Y = np.linspace(ymin, ymax, n).reshape(1,n)*np.ones((n,1))
-    XY = np.zeros((n, n, 2))
-    XY[...,0], XY[...,1] = X, Y
-    Z = m.Vtot(XY, T)
+    X = np.linspace(xmin, xmax, n).reshape(1,n)*np.ones((n,1))
+    Y = np.linspace(ymin, ymax, n).reshape(n,1)*np.ones((1,n))
+    A = offset*np.ones((1,n))*np.ones((n,1))
+    XY = np.zeros((n, n, m.Ndim))
+    XY[...,0], XY[...,1], XY[...,2] = X, Y, A
+    Z = m.V0(XY)
+    #Z = m.Vtot(XY, T)
     # Take the log to amplify variation around minimum
     #Z = np.log(Z)
     minZ, maxZ = min(Z.ravel()), max(Z.ravel())
@@ -311,7 +355,7 @@ def vsh(m, box, T, n=50, clevs=200, cfrac=1., **contourParams):
     for c in cset2.collections:
         c.set_linestyle('dotted')
         c.set_linewidth(0.8)
-    plt.axis(box)
+    plt.axis([xmin,xmax,ymin,ymax])
     plt.xlabel('h')
     plt.ylabel('S')
     plt.colorbar(cset1)

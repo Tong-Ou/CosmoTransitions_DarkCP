@@ -284,8 +284,8 @@ make use of the Vtot method in generic_potential
 
 def vsh(m, box, T, n=50, clevs=200, cfrac=1., **contourParams):
     xmin,xmax,ymin,ymax = box
-    X = np.linspace(xmin, xmax, n).reshape(n,1)*np.ones((1,n))
-    Y = np.linspace(ymin, ymax, n).reshape(1,n)*np.ones((n,1))
+    X = np.linspace(xmin, xmax, n).reshape(1,n)*np.ones((n,1))
+    Y = np.linspace(ymin, ymax, n).reshape(n,1)*np.ones((1,n))
     XY = np.zeros((n, n, 2))
     XY[...,0], XY[...,1] = X, Y
     Z = m.Vtot(XY, T)

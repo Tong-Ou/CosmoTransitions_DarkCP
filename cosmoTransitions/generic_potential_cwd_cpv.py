@@ -321,7 +321,7 @@ class generic_potential():
              # the 1e-100 is to avoid divide by zero errors
         T4 = T*T*T*T
         m2, nb, c = bosons
-        print('M: %s' % m2)
+        #print('M_bosons: %s' % m2)
         y = np.sum(nb*Jb(m2/T2), axis=-1)
         m2, nf = fermions
         y += np.sum(nf*Jf(m2/T2), axis=-1)
