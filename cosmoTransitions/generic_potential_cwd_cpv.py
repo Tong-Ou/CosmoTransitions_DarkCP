@@ -286,12 +286,16 @@ class generic_potential():
         Counterterms to eliminate impacts of VCW on physical vacuum.
         '''
         X = np.asanyarray(X, dtype=float)
-        vphy = [246., 0.]
-        phi1 = X[..., 0]
+        vphy = [246., 0., 0.]
+        phi1, phi2, phi3 = X[..., 0], X[...,1], X[...,2]
         #vphy = np.asanyarray(vphy, dtype=float)
-        delta_lh = (self.gradVCW(vphy, T=0.)[0] - vphy[0]*self.d2VCW(vphy, T=0.)[0][0])/(2*vphy[0]**3)
-        delta_muh = (3*self.gradVCW(vphy, T=0.)[0] - vphy[0]*self.d2VCW(vphy, T=0.)[0][0])/(2*vphy[0])
-        return -0.5*delta_muh*phi1**2 + 0.25*delta_lh*phi1**4
+        gradVCW = self.gradVCW(vphy, T=0.)
+        d2VCW = self.d2VCW(vphy, T=0.)
+        delta_lh = (gradVCW[0] - vphy[0]*d2VCW[0][0])/(2*vphy[0]**3)
+        delta_muh = (3*gradVCW[0] - vphy[0]*d2VCW[0][0])/(2*vphy[0])
+        re_rho = -gradVCW[1]
+        im_rho = gradVCW[2]
+        return -0.5*delta_muh*phi1**2 + 0.25*delta_lh*phi1**4 + re_rho*phi2 - im_rho*phi3
 
     def V1T(self, bosons, fermions, T, include_radiation=False):
         """
@@ -395,8 +399,8 @@ class generic_potential():
         bosons = self.boson_massSq(X,T)
         fermions = self.fermion_massSq(X)
         y = self.V0(X)
-        #y += self.V1(X, T)
-        #y += self.counterterm(X)
+        y += self.V1(X, T)
+        y += self.counterterm(X)
         y += self.V1T(bosons, fermions, T, include_radiation=False)
         return y
 

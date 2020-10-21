@@ -40,11 +40,13 @@ for index in range(len(paras)):
     if index%size != rank:
         continue
     else:
+        '''
         logfile = '%s/pt_%s.log' % (OUT_PATH, rank)
         if index==rank and os.path.exists(logfile):
            os.remove(logfile)
         log = open(logfile, 'a')
         sys.stdout = log
+        '''
 
         para = paras[index]
         print('The parameters are:')
@@ -64,7 +66,7 @@ for index in range(len(paras)):
         
         print("\n")
         print("\n")
-        
+        ''' 
         print("Now let's find the phase transitions:")
         
         mt.calcTcTrans()
@@ -116,8 +118,9 @@ for index in range(len(paras)):
         print("\n \n All the tunnelings/phase transitions of such a model are")
 
         mt.prettyPrintTnTrans()
-
+        '''
+        '''
         mt.plotNuclCriterion()
         plt.savefig('%s/S_T_%s.png' % (OUT_PATH, index))
         plt.clf()
-
+        '''

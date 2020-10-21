@@ -58,7 +58,7 @@ lsr = [0., 4*np.pi]
 
 lshr = [0., 4*np.pi]
 
-ks2r = [0., 1.]
+ks2r = [0., 0.1]
 
 ydr = [1e-2, 10.]
 thetaYr = [0., 2*np.pi]
@@ -93,11 +93,20 @@ def physpara(m):
 
     print('Check whether this is global minimum...')
     A = (m.vs2+m.ks2/m.ls)**0.5
-    vs = m.findMinimum([np.array([0.1, 0.1, A])], T=0.)
+    vs = m.findMinimum(np.array([0.1, 0.1, A]), T=0.)
+    vr1 = m.findMinimum(np.array([0.01, 0.01, 0.01]), T=0.)
+    vr2 = m.findMinimum(np.array([200., 200., 200.]), T=0.)
     print ('Singlet minimum: %s' % vs)
-    if m.Vtot(vs, T=0.) < m.Vtot(vp, T=0.):
-        print ('Higgs minimum is not global minimum, exiting...')
-        return None
+    print ('Other possible minimum: %s, %s' % (vr1, vr2))
+    minX = [vs, vr1, vr2]
+    
+    for v in minX:
+        # make sure this is not Higgs vacuum
+        if all([abs(vp[0]-v[0])<0.5, abs(vp[1]-v[1])<0.5, abs(vp[2]-v[2])<0.5]):
+            pass
+        elif m.Vtot(v, T=0.) < m.Vtot(vp, T=0.):
+            print ('Higgs minimum is not global minimum, exiting...')
+            return None
     
     tanbphy = vp[1]/vp[0]
     
@@ -294,11 +303,12 @@ def getscan(l2box, lmbox, ks2box, m2box, ydbox, thetaYbox, m0box, npt):
                       
             v2re = 600.**2.
     
-            # Zero-T global minimum condition
+            # Zero-T global minimum condition (valid at tree-level)
+            '''
             if l2*m22**2 >= (l1*m12**2-2*ks2*m22-ks2**2/l2):
                 #scan_task += 1
-                continue
-                
+                continue                
+               ''' 
             mcwd = bm.model(m12, m22, l1, l2, lm, ks2, yd, thetaY, m0, v2re)
 
             # Physical parameters

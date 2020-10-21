@@ -103,15 +103,16 @@ class model(generic_potential.generic_potential):
         # Tong: Mass corrections. See paper 2.2. Does A have mass correction?
         # How to calculate these in presence of CP violation term?
         ringh = (3.*self.Y1**2./16. + self.Y2**2./16. + self.lh/2 + self.Yt**2./4. + self.lsh/12.)*T**2.*phi1**0.
-        rings = (self.ls/3. + self.lsh/6. + self.yd**2/12.)*T**2.*phi1**0.
+        rings = (self.ls/3. + self.lsh/6. + self.yd**2/48.)*T**2.*phi2**0.
+        ringA = rings
         ringwl = 11.*self.Y1**2.*T**2.*phi1**0./6.
         ringbl = 11.*self.Y2**2.*T**2.*phi1**0./6.
         ringchi = (3.*self.Y1**2./16. + self.Y2**2./16. + self.lh/2. + self.Yt**2./4. + self.lsh/12.)*T**2.*phi1**0.
         
-        try:
-            a = -muh2 + 3.*self.lh*phi1**2. + 0.5*self.lsh*(phi2**2+phi3**2) #mh^2
-            b = -mus2 + 3.*self.ls*phi2**2. + self.ls*phi3**2. + 0.5*self.lsh*phi1**2. + 2.*self.ks2 #ms^2
-            c = -mus2 + 3.*self.ls*phi3**2. + self.ls*phi2**2. + 0.5*self.lsh*phi1**2. - 2.*self.ks2 #mA^2
+        if phi1.ndim < 1:
+            a = -muh2 + 3.*self.lh*phi1**2. + 0.5*self.lsh*(phi2**2+phi3**2) +ringh #mh^2
+            b = -mus2 + 3.*self.ls*phi2**2. + self.ls*phi3**2. + 0.5*self.lsh*phi1**2. + 2.*self.ks2 +rings #ms^2
+            c = -mus2 + 3.*self.ls*phi3**2. + self.ls*phi2**2. + 0.5*self.lsh*phi1**2. - 2.*self.ks2 +ringA #mA^2
             mab = self.lsh*phi2*phi1
             mbc = 2.*self.ls*phi2*phi3
             mac = self.lsh*phi1*phi3
@@ -119,13 +120,13 @@ class model(generic_potential.generic_potential):
             msq = np.array([[a,mab,mac],[mab,b,mbc],[mac,mbc,c]], dtype=float)
             msqeig = np.linalg.eigvalsh(msq)
             #msqeig = msqeig.tolist()
-        except:
+        else:
             msqeig = [] 
             if phi1.ndim == 1:
                 for i in range(len(phi1)):
-                    a = -muh2 + 3.*self.lh*phi1[i]**2. + 0.5*self.lsh*(phi2[i]**2+phi3[i]**2) #mh^2
-                    b = -mus2 + 3.*self.ls*phi2[i]**2. + self.ls*phi3[i]**2. + 0.5*self.lsh*phi1[i]**2. + 2.*self.ks2 #ms^2
-                    c = -mus2 + 3.*self.ls*phi3[i]**2. + self.ls*phi2[i]**2. + 0.5*self.lsh*phi1[i]**2. - 2.*self.ks2 #mA^2
+                    a = -muh2 + 3.*self.lh*phi1[i]**2. + 0.5*self.lsh*(phi2[i]**2+phi3[i]**2) +ringh[i] #mh^2
+                    b = -mus2 + 3.*self.ls*phi2[i]**2. + self.ls*phi3[i]**2. + 0.5*self.lsh*phi1[i]**2. + 2.*self.ks2 +rings[i] #ms^2
+                    c = -mus2 + 3.*self.ls*phi3[i]**2. + self.ls*phi2[i]**2. + 0.5*self.lsh*phi1[i]**2. - 2.*self.ks2 +ringA[i] #mA^2
                     mab = self.lsh*phi2[i]*phi1[i]
                     mbc = 2.*self.ls*phi2[i]*phi3[i]
                     mac = self.lsh*phi1[i]*phi3[i]
@@ -137,9 +138,9 @@ class model(generic_potential.generic_potential):
                 for i in range(phi1.shape[0]):
                     msqeig_dir = []
                     for j in range(phi1.shape[1]):
-                        a = -muh2 + 3.*self.lh*phi1[i][j]**2. + 0.5*self.lsh*(phi2[i][j]**2+phi3[i][j]**2)
-                        b = -mus2 + 3.*self.ls*phi2[i][j]**2. + self.ls*phi3[i][j]**2. + 0.5*self.lsh*phi1[i][j]**2. + 2.*self.ks2
-                        c = -mus2 + 3.*self.ls*phi3[i][j]**2. + self.ls*phi2[i][j]**2. + 0.5*self.lsh*phi1[i][j]**2. - 2.*self.ks2
+                        a = -muh2 + 3.*self.lh*phi1[i][j]**2. + 0.5*self.lsh*(phi2[i][j]**2+phi3[i][j]**2) +ringh[i][j]
+                        b = -mus2 + 3.*self.ls*phi2[i][j]**2. + self.ls*phi3[i][j]**2. + 0.5*self.lsh*phi1[i][j]**2. + 2.*self.ks2 +rings[i][j]
+                        c = -mus2 + 3.*self.ls*phi3[i][j]**2. + self.ls*phi2[i][j]**2. + 0.5*self.lsh*phi1[i][j]**2. - 2.*self.ks2 +ringA[i][j]
                         mab = self.lsh*phi2[i][j]*phi1[i][j]
                         mbc = 2.*self.ls*phi2[i][j]*phi3[i][j]
                         mac = self.lsh*phi1[i][j]*phi3[i][j]
@@ -195,7 +196,7 @@ class model(generic_potential.generic_potential):
         phi1, phi2, phi3 = X[...,0], X[...,1], X[...,2]
 
         mt = 0.5*self.Yt**2.*phi1**2.
-        md = self.m0**2 + 0.5*self.yd**2*(phi2**2+phi3**2)+self.m0*self.yd*(phi2*np.cos(self.thetaY)-phi3*np.sin(self.thetaY))/2**0.5
+        md = self.m0**2 + 0.5*self.yd**2*(phi2**2+phi3**2)+self.m0*self.yd*(phi2*np.cos(self.thetaY)-phi3*np.sin(self.thetaY))*2**0.5
         M = np.array([mt, md])
 
         M = np.rollaxis(M, 0, len(M.shape))
@@ -339,8 +340,8 @@ def vsh(m, box, T, n=50, clevs=200, cfrac=1., **contourParams):
     A = offset*np.ones((1,n))*np.ones((n,1))
     XY = np.zeros((n, n, m.Ndim))
     XY[...,0], XY[...,1], XY[...,2] = X, Y, A
-    Z = m.V0(XY)
-    #Z = m.Vtot(XY, T)
+    #Z = m.V0(XY)
+    Z = m.Vtot(XY, T)
     # Take the log to amplify variation around minimum
     #Z = np.log(Z)
     minZ, maxZ = min(Z.ravel()), max(Z.ravel())
