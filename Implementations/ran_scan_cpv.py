@@ -87,52 +87,76 @@ scan = []
 BASE_PATH = '/home/tong/Work/EWPhT/cosmotransition_z2s/Implementations/'
 
 def physpara(m):
-    
+
+    '''
+    gradV_exp = m.gradV([246.,0.,0.], T=0.)
+    d2V_exp = m.d2V([246.,0.,0.], T=0.)
+    m2sq_exp, eig_exp = np.linalg.eig(d2V_exp)
+    print ('\n')
+    print ('First derivative at expected Higgs minimum: %s' % gradV_exp)
+    print ('Mass eigenvalues at expected Higgs minimum: %s' % m2sq_exp)
+    if any((m2sq_exp[0]<0, m2sq_exp[1]<0, m2sq_exp[2]<0)):
+        print ('Expected Higgs vev is a saddle point, exiting...')
+        return None
+    '''
     vp = m.findMinimum(T=0.)
     print ('Higgs minimum: [%s, %s, %s]' % (vp[0],vp[1],vp[2]))
-
-    print('Check whether this is global minimum...')
-    A = (m.vs2+m.ks2/m.ls)**0.5
-    vs = m.findMinimum(np.array([0.1, 0.1, A]), T=0.)
-    vr1 = m.findMinimum(np.array([0.01, 0.01, 0.01]), T=0.)
-    vr2 = m.findMinimum(np.array([200., 200., 200.]), T=0.)
-    print ('Singlet minimum: %s' % vs)
-    print ('Other possible minimum: %s, %s' % (vr1, vr2))
-    minX = [vs, vr1, vr2]
-    
-    for v in minX:
-        # make sure this is not Higgs vacuum
-        if all([abs(vp[0]-v[0])<0.5, abs(vp[1]-v[1])<0.5, abs(vp[2]-v[2])<0.5]):
-            pass
-        elif m.Vtot(v, T=0.) < m.Vtot(vp, T=0.):
-            print ('Higgs minimum is not global minimum, exiting...')
-            return None
-    
-    tanbphy = vp[1]/vp[0]
-    
-    m2phys = m.d2V(vp, T=0.)
-        
-    m2physd, eigv = np.linalg.eig(m2phys)
-    
-    if all((m2physd[0] >= 0., m2physd[1] >= 0.)):
-                      
-        sintphy = eigv[0][1]
-           
-        m1phy, m2phy, m3phy = m2physd**.5
-    
+    if vp[0] > 248. or vp[0] < 244.:
+        print ('Not at the expected Higgs vev, exiting...')
+        return None
     else:
+        m2phys = m.d2V(vp, T=0.)
+        m2physd, eigv = np.linalg.eig(m2phys)
+        # Double check
+        if any((m2physd[0] < 0., m2physd[1] < 0., m2physd[2] < 0.)):
+            print ('Returned Higgs vacuum is a saddle point, exiting...')
+            return None
+        else:
+            pass
+        m1phy = m2physd[0]**0.5
+        if m1phy < 123. or m1phy > 127.:
+            print ('Not at the expected Higgs mass, exiting...')
+            return None
+        else:
+            print('Search for other local minima and check whether this is global minimum...')
+            vh = 246.
+            vs = (m.vs2+m.ks2/m.ls)**0.5
+            vscan = [0.1, vh, vs, 1e5]
+            minX = []
+            for v1 in vscan:
+                for v2 in vscan:
+                    for v3 in vscan:
+                        if all((v1==vh, v2==0.1, v3==0.1)):
+                            continue
+                        lmin = m.findMinimum(np.array([v1, v2, v3]), T=0.)
+                        minX.append(lmin)
+   
+            for v in minX:
+                # make sure this is not Higgs vacuum
+                if np.sum((vp-v)**2, -1)**.5 < 0.01:
+                    pass
+                elif m.Vtot(v, T=0.) < m.Vtot(vp, T=0.):
+                    print ('Local minimum %s is lower than Higgs minimum' % v)
+                    print ('Higgs minimum is not global minimum, exiting...')
+                    return None
+            
+            '''
+            tanbphy = vp[1]/vp[0]
+            
+            if any((m1phy == None, eigv == None)):
 
+                m1phy = 0.
 
-        sintphy = 0.
+                sintphy = 0.
+            
+            else:
+
+                sintphy = eigv[0][1]
+            '''
                 
-        m1phy = 0.
-        
-        m2phy = 0.          
-        
-    return [vp[0], tanbphy, m1phy, m2phy, sintphy]
+            return [vp, m1phy, minX]
         
         
-
 def trans(i, m):
 
     print "\n check point %s \n" %[i, m.lh, m.ls, m.lsh, m.ks2, m.vh2, m.vs2] 
@@ -225,14 +249,14 @@ def getscani(i, m):
                 
  '''                                                 
 
-def getscan(l2box, lmbox, ks2box, m2box, ydbox, thetaYbox, m0box, npt):
+def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
  
    # l1min,l1max = l1box
     l2min, l2max = l2box
     lmmin, lmmax = lmbox
     ks2min, ks2max = ks2box
     #m12min, m12max = m12box
-    m2min, m2max = m2box
+    vsmin, vsmax = vsbox
     ydmin, ydmax = ydbox
     thetaYmin, thetaYmax = thetaYbox
     m0min, m0max = m0box
@@ -284,23 +308,17 @@ def getscan(l2box, lmbox, ks2box, m2box, ydbox, thetaYbox, m0box, npt):
             #l2 = ran.uniform(0, 5.)
             lm = ran.uniform(lmmin,lmmax)
             ks2 = ran.uniform(ks2min, ks2max)
+            #ks2 = 0.
             #m1log = ran.uniform(m1min,m1max)
-            m2log = ran.uniform(m2min,m2max)
+            vslog = ran.uniform(vsmin,vsmax)
             #m2log = ran.uniform(200, 250)
             yd = ran.uniform(ydmin, ydmax)
             thetaY = ran.uniform(thetaYmin, thetaYmax)
             m0 = ran.uniform(m0min, m0max)
 
-            m12 = vh**2
-            m22 = m2log**2
-            #yd = np.sqrt(yd2)
-            #ch = ran.uniform(chmin,chmax)
-            #cs = ran.uniform(csmin,csmax)
-            #
-            #m12 = 10.**m12log
-            #
-            #m22 = 10.**m22log
-                      
+            vh2 = vh**2
+            vs2 = vslog**2
+                     
             v2re = 600.**2.
     
             # Zero-T global minimum condition (valid at tree-level)
@@ -309,20 +327,29 @@ def getscan(l2box, lmbox, ks2box, m2box, ydbox, thetaYbox, m0box, npt):
                 #scan_task += 1
                 continue                
                ''' 
-            mcwd = bm.model(m12, m22, l1, l2, lm, ks2, yd, thetaY, m0, v2re)
+            mcwd = bm.model(vh2, vs2, l1, l2, lm, ks2, yd, thetaY, m0, v2re)
 
             # Physical parameters
             phy = physpara(mcwd)
             if phy is None:
                 continue
-            vphy, tanbphy, m1phy, m2phy, sintphy = phy[0], phy[1], phy[2], phy[3], phy[4]
+            #vphy, tanbphy, m1phy, m2phy, sintphy = phy[0], phy[1], phy[2], phy[3], phy[4]
+            vphy, m1phy, localMin = phy[0], phy[1], phy[2]
+            scan_rank.append([vh2, vs2, l1, l2, lm, ks2, yd, thetaY, m0, v2re, vphy, m1phy, localMin])
+            filename = '%s_%s' % (FILE, rank)
+            np.save(os.path.join(BASE_PATH, filename), scan_rank)
 
             #Tong: Constraints: 1. Higgs mass and vev.
-                        
+            '''            
             if all((vphy <= 248., vphy >= 244.)):
                 
                 if all ((m1phy <= 127., m1phy >= 123.)):
 
+                    scan_rank.append([m12, m22, l1, l2, lm, ks2, yd, thetaY, m0, v2re, vphy, m1phy, localMin])
+                    filename = '%s_%s' % (FILE, rank)
+                    np.save(os.path.join(BASE_PATH, filename), scan_rank)
+
+                    
                     # 2. FO condition
                     fo, foph, sfo, sfoph = trans(n, mcwd)
                
@@ -377,7 +404,7 @@ def getscan(l2box, lmbox, ks2box, m2box, ydbox, thetaYbox, m0box, npt):
             else:
                 
                 pass
-
+            '''
     para_dict = {'ls_scan':ls_scan, 'lsh_scan':lsh_scan, 'yd_scan':yd_scan, 'ks2_scan':ks2_scan,
             'ls_fo':ls_fo, 'lsh_fo':lsh_fo, 'yd_fo':yd_fo, 'ks2_fo': ks2_fo,
             'ls_sfo':ls_sfo, 'lsh_sfo':lsh_sfo, 'yd_sfo':yd_sfo, 'ks2_sfo': ks2_sfo}

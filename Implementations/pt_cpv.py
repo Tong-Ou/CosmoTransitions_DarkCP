@@ -27,11 +27,11 @@ size = comm.Get_size()
 FILE = sys.argv[1]
 OUT_PATH = sys.argv[2]
 
-paras_0 = np.load('%s_0.npy' % FILE)
-paras_1 = np.load('%s_1.npy' % FILE)
-paras_2 = np.load('%s_2.npy' % FILE)
-paras_3 = np.load('%s_3.npy' % FILE)
-paras = np.concatenate((paras_0, paras_1, paras_2, paras_3),axis = 0)
+#paras_0 = np.load('%s_0.npy' % FILE)
+paras_1 = np.load('%s_1.npy' % FILE, allow_pickle = True) #unsafe
+paras_2 = np.load('%s_2.npy' % FILE, allow_pickle = True)
+#paras_3 = np.load('%s_3.npy' % FILE)
+paras = np.concatenate((paras_1, paras_2),axis = 0)
 np.save('%s.npy' % FILE, paras)
 
 fig = plt.figure()
@@ -40,13 +40,11 @@ for index in range(len(paras)):
     if index%size != rank:
         continue
     else:
-        '''
         logfile = '%s/pt_%s.log' % (OUT_PATH, rank)
         if index==rank and os.path.exists(logfile):
            os.remove(logfile)
         log = open(logfile, 'a')
         sys.stdout = log
-        '''
 
         para = paras[index]
         print('The parameters are:')
@@ -54,6 +52,8 @@ for index in range(len(paras)):
         
         #mt = bmt.model(0.3,0.036,-0.171, 125., 246.**2., 1000.**2.)
         mt = bmt.model(para[0],para[1],para[2],para[3],para[4],para[5],para[6],para[7],para[8],para[9])
+        vphy = np.array([para[10], 0., 0.])
+        zeroTLocalMin = para[12]
         
         print("\n")
         print("\n")
@@ -66,10 +66,10 @@ for index in range(len(paras)):
         
         print("\n")
         print("\n")
-        ''' 
+         
         print("Now let's find the phase transitions:")
         
-        mt.calcTcTrans()
+        mt.calcTcTrans(vphy, zeroTLocalMin)
         
         print("\n \n All the phase transitions of such a model are")
         
@@ -104,7 +104,7 @@ for index in range(len(paras)):
         print("Now let's find the corresponding tunneliings:")
        
         try:
-            mt.findAllTransitions()
+            mt.findAllTransitions(vphy, zeroTLocalMin)
         except KeyError as err:
             print ('Skipping due to KeyError: %s...' % err)
             continue
@@ -114,11 +114,11 @@ for index in range(len(paras)):
         except:
             print ('Skipping due to unexpected error...')
             continue
-
+        
         print("\n \n All the tunnelings/phase transitions of such a model are")
 
         mt.prettyPrintTnTrans()
-        '''
+        
         '''
         mt.plotNuclCriterion()
         plt.savefig('%s/S_T_%s.png' % (OUT_PATH, index))
