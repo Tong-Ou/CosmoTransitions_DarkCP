@@ -5,7 +5,7 @@ from __future__ import division
 """
 Created on Fri Feb  9 20:33:49 2018
 
-@author: yik
+@author: Tong Ou (adapted from Yikun's codes)
 """
 
 import sys
@@ -27,11 +27,16 @@ size = comm.Get_size()
 FILE = sys.argv[1]
 OUT_PATH = sys.argv[2]
 
-#paras_0 = np.load('%s_0.npy' % FILE)
-paras_1 = np.load('%s_1.npy' % FILE, allow_pickle = True) #unsafe
-paras_2 = np.load('%s_2.npy' % FILE, allow_pickle = True)
-#paras_3 = np.load('%s_3.npy' % FILE)
-paras = np.concatenate((paras_1, paras_2),axis = 0)
+ncpu = 4
+para_list = []
+for rank in range(ncpu):
+    filename = '%s_%s.npy' % (FILE, rank)
+    if os.path.exists(filename):
+        para = np.load(filename, allow_pickle = True)
+        para_list.append(para)
+    else:
+        continue
+paras = np.concatenate(para_list,axis = 0)
 np.save('%s.npy' % FILE, paras)
 
 fig = plt.figure()
@@ -52,7 +57,7 @@ for index in range(len(paras)):
         
         #mt = bmt.model(0.3,0.036,-0.171, 125., 246.**2., 1000.**2.)
         mt = bmt.model(para[0],para[1],para[2],para[3],para[4],para[5],para[6],para[7],para[8],para[9])
-        vphy = np.array([para[10], 0., 0.])
+        vphy = para[10]
         zeroTLocalMin = para[12]
         
         print("\n")

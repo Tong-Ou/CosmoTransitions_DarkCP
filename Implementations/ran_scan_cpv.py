@@ -3,7 +3,7 @@
 """
 Created on Sun Feb 11 17:10:18 2018
 
-@author: yik
+@author: Tong Ou (adapted from Yikun's codes)
 """
 
 """
@@ -58,7 +58,7 @@ lsr = [0., 4*np.pi]
 
 lshr = [0., 4*np.pi]
 
-ks2r = [0., 0.1]
+ks2r = [0., 10.]
 
 ydr = [1e-2, 10.]
 thetaYr = [0., 2*np.pi]
@@ -126,19 +126,18 @@ def physpara(m):
             for v1 in vscan:
                 for v2 in vscan:
                     for v3 in vscan:
-                        if all((v1==vh, v2==0.1, v3==0.1)):
-                            continue
                         lmin = m.findMinimum(np.array([v1, v2, v3]), T=0.)
+                        if m.Vtot(lmin, T=0.) < m.Vtot(vp, T=0.):
+                            if np.sum((lmin-vp)**2 ,-1)**.5 >= 0.01:
+                                print ('Local minimum %s is lower than Higgs minimum' % lmin)
+                                print ('Higgs minimum is not global minimum, exiting...')
+                                return None
+                            else:
+                                pass
+                        else:
+                            pass
                         minX.append(lmin)
    
-            for v in minX:
-                # make sure this is not Higgs vacuum
-                if np.sum((vp-v)**2, -1)**.5 < 0.01:
-                    continue
-                elif m.Vtot(v, T=0.) < m.Vtot(vp, T=0.):
-                    print ('Local minimum %s is lower than Higgs minimum' % v)
-                    print ('Higgs minimum is not global minimum, exiting...')
-                    return None
             
             '''
             tanbphy = vp[1]/vp[0]
