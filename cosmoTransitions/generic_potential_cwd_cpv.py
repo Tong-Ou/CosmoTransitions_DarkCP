@@ -293,9 +293,11 @@ class generic_potential():
         d2VCW = self.d2VCW(vphy, T=0.)
         delta_lh = (gradVCW[0] - vphy[0]*d2VCW[0][0])/(2*vphy[0]**3)
         delta_muh = (3*gradVCW[0] - vphy[0]*d2VCW[0][0])/(2*vphy[0])
+        #re_rho = self.nd*self.m0**3*self.yd*np.cos(self.thetaY)*(np.log(self.m0**2/self.renormScaleSq)-1)/(32*np.pi**2)
+        #im_rho = self.nd*self.m0**3*self.yd*np.sin(self.thetaY)*(np.log(self.m0**2/self.renormScaleSq)-1)/(32*np.pi**2)
         re_rho = -gradVCW[1]
         im_rho = gradVCW[2]
-        return -0.5*delta_muh*phi1**2 + 0.25*delta_lh*phi1**4 + re_rho*phi2 - im_rho*phi3
+        return -0.5*delta_muh*phi1**2 + 0.25*delta_lh*phi1**4 + (re_rho*phi2 - im_rho*phi3)
 
     def V1T(self, bosons, fermions, T, include_radiation=False):
         """
@@ -645,7 +647,7 @@ class generic_potential():
         """
         return False
 
-    def getPhases(self,tracingArgs={}):
+    def getPhases(self, vphy = np.array([246.,0.,0.]), minX = [np.empty(3)], tracingArgs={}):
         """
         Find different phases as functions of temperature
 
@@ -664,8 +666,10 @@ class generic_potential():
         """
         tstop = self.Tmax
         points = []
-        for x0 in self.approxZeroTMin():
-            points.append([x0,0.0])
+        #for x0 in self.approxZeroTMin():
+         #   points.append([x0,0.0])
+        for x0 in self.zeroTLocalMin(vphy, minX):
+            points.append([x0, 0.0])
         tracingArgs_ = dict(forbidCrit=self.forbidPhaseCrit)
         tracingArgs_.update(tracingArgs)
         phases = transitionFinder.traceMultiMin(
@@ -677,7 +681,7 @@ class generic_potential():
             self.Vtot, phases, self.x_eps*1e-2, self.x_eps*10)
         return self.phases
 
-    def calcTcTrans(self, startHigh=False):
+    def calcTcTrans(self, vphy, zeroTLocalMin, startHigh = False):
         """
         Runs :func:`transitionFinder.findCriticalTemperatures`, storing the
         result in `self.TcTrans`.
@@ -694,7 +698,7 @@ class generic_potential():
         self.TcTrans
         """
         if self.phases is None:
-            self.getPhases()
+            self.getPhases(vphy, zeroTLocalMin)
         self.TcTrans = transitionFinder.findCriticalTemperatures(
             self.phases, self.Vtot, startHigh)
         for trans in self.TcTrans:
@@ -705,7 +709,7 @@ class generic_potential():
                 - self.energyDensity(xlow,T,False)
         return self.TcTrans
 
-    def findAllTransitions(self, makePlot=False, tunnelFromPhase_args={}):
+    def findAllTransitions(self, vphy, zeroTLocalMin, makePlot=False, tunnelFromPhase_args={}):
         """
         Find all phase transitions up to `self.Tmax`, storing the transitions
         in `self.TnTrans`.
@@ -733,7 +737,7 @@ class generic_potential():
         self.TnTrans
         """
         if self.phases is None:
-            self.getPhases()
+            self.getPhases(vphy, zeroTLocalMin)
         self.TnTrans = transitionFinder.findAllTransitions(
             self.phases, self.Vtot, self.gradV, makePlot, tunnelFromPhase_args)
         # Add in the critical temperature

@@ -211,12 +211,25 @@ class model(generic_potential.generic_potential):
         # and we want to include both of them.
         return [np.array([246., 0.1, 0.1])]
 
+    def zeroTLocalMin(self, vphy, minX):
+        # Remove redundant local minima at T=0.
+        localMin = [vphy]
+        for x in minX:
+            newPoint = True
+            for i in range(len(localMin)-1, -1, -1):
+                if np.sum((localMin[i]-x)**2, -1)**.5 < 0.01:
+                    newPoint = False
+                    break
+            if newPoint:
+                localMin.append(x)
+        return localMin
 
     def forbidPhaseCrit(self, X):
         """
-        forbid negative phases for both h and s
+        forbid negative phases for h (S and A could be negative due to the tadpole term in M_chi)
         """
-        return any([np.array([X])[...,0] < -5.0, np.array([X])[...,1] < -5.0])
+        #return any([np.array([X])[...,0] < -5.0, np.array([X])[...,1] < -5.0, np.array([X])[...,2] < 5.0])
+        return np.array([X])[...,0] < -5.0
  
     
     def V0s0(self, phi):

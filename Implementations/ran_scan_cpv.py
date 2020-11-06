@@ -134,7 +134,7 @@ def physpara(m):
             for v in minX:
                 # make sure this is not Higgs vacuum
                 if np.sum((vp-v)**2, -1)**.5 < 0.01:
-                    pass
+                    continue
                 elif m.Vtot(v, T=0.) < m.Vtot(vp, T=0.):
                     print ('Local minimum %s is lower than Higgs minimum' % v)
                     print ('Higgs minimum is not global minimum, exiting...')
@@ -327,6 +327,13 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
                 #scan_task += 1
                 continue                
                ''' 
+
+            # Zero-T non-tachyonic conditions at tree-level
+            print ('\n')
+            if any((-l2*vs2 + 0.5*lm*vh2 + 2.*ks2 < 0, -l2*vs2 + 0.5*lm*vh2 - 2.*ks2 < 0)):
+                print ('Not satisfy non-tachyonic conditions at tree-level, skipping...')
+                continue
+
             mcwd = bm.model(vh2, vs2, l1, l2, lm, ks2, yd, thetaY, m0, v2re)
 
             # Physical parameters

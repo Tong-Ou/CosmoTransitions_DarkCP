@@ -300,7 +300,8 @@ class Phase:
         np.set_printoptions(**popts)
         return s
 
-
+# Recording tunnelings encountering exceptions
+badTunneling = []
 def traceMultiMin(f, d2f_dxdt, d2f_dx2,
                   points, tLow, tHigh, deltaX_target,
                   dtstart=1e-3, tjump=1e-4, forbidCrit=None,
@@ -370,6 +371,7 @@ def traceMultiMin(f, d2f_dxdt, d2f_dx2,
         #print ('.')
         nextPoint.append([t,dtstart,fmin(x,t),None])
 
+    print ('Points to trace: %s'% nextPoint)
     while len(nextPoint) != 0:
         # DEBUG
         #print ('%s points left' % len(nextPoint))
@@ -396,6 +398,7 @@ def traceMultiMin(f, d2f_dxdt, d2f_dx2,
             if np.sum((x-x1)**2)**.5 < 2*deltaX_target:
                 # The point is already covered
                 # Skip this phase and change the linkage.
+                print ('This point is already covered')
                 if linkedFrom != i and linkedFrom is not None:
                     phase.addLinkFrom(phases[linkedFrom])
                 break
@@ -694,6 +697,9 @@ def _tunnelFromPhaseAtT(T, phases, start_phase, V, dV,
     for key in phases.keys():
         if key == start_phase.key:
             continue
+        # Skip the phases encountering exceptions before.
+        if (start_phase.key, key) in badTunneling:
+            continue
         p = phases[key]
         if (p.T[0] > T or p.T[-1] < T):
             continue
@@ -741,7 +747,16 @@ def _tunnelFromPhaseAtT(T, phases, start_phase, V, dV,
             tdict['instanton'] = tobj
             tdict['action'] = tobj.action
             tdict['trantype'] = 1
+        except KeyError as err:
+            badTunneling.append((tdict['high_phase'], tdict['low_phase']))
+            print ('Skipping tunneling from phase %s to phase %s due to KeyError %s'% (tdict['high_phase'],tdict['low_phase'],err))
+            continue
+        except ValueError as err: 
+            badTunneling.append((tdict['high_phase'], tdict['low_phase']))
+            print ('Skipping tunneling from phase %s to phase %s due to ValueError %s'% (tdict['high_phase'],tdict['low_phase'],err))
+            continue
         except tunneling1D.PotentialError as err:
+            badTunneling.append((tdict['high_phase'], tdict['low_phase']))
             if err.args[1] == "no barrier":
                 tdict['trantype'] = 0
                 tdict['action'] = 0.0
@@ -853,7 +868,7 @@ def tunnelFromPhase(phases, start_phase, V, dV, Tmax, makePlot=False,
           None for a second-order transition.
         - *trantype* : 1 or 2 for first or second-order transitions.
     """
-    outdict = {}  # keys are T values
+    outdict = {}  # keys are T values 
     args = (phases, start_phase, V, dV,
             phitol, overlapAngle, nuclCriterion,
             fullTunneling_params, verbose, outdict, makePlot)
@@ -864,6 +879,7 @@ def tunnelFromPhase(phases, start_phase, V, dV, Tmax, makePlot=False,
     Tmax = min(Tmax, T_highest_other)
     assert Tmax >= Tmin
     try:
+        badTunneling = []
         #Tong: Find a root of _tunnelFromPhaseAtT (nuclCriterion) in the interval [Tmin, Tmax]
         Tnuc = optimize.brentq(_tunnelFromPhaseAtT, Tmin, Tmax, args=args,
                                xtol=Ttol, maxiter=maxiter, disp=False)
@@ -884,6 +900,7 @@ def tunnelFromPhase(phases, start_phase, V, dV, Tmax, makePlot=False,
                         raise StopIteration(T)
 
                 try:
+                    badTunneling = []
                     Tmin = optimize.fmin(_tunnelFromPhaseAtT, 0.5*(Tmin+Tmax),
                                          args=args, xtol=Ttol*10, ftol=1.0,
                                          maxiter=maxiter, disp=0,
@@ -893,6 +910,7 @@ def tunnelFromPhase(phases, start_phase, V, dV, Tmax, makePlot=False,
                 if nuclCriterion(outdict[Tmin]['action'], Tmin) > 0:
                     # no tunneling possible
                     return None
+                badTunneling = []
                 Tnuc = optimize.brentq(
                     _tunnelFromPhaseAtT, Tmin, Tmax,
                     args=args, xtol=Ttol, maxiter=maxiter, disp=False)
@@ -1165,6 +1183,7 @@ def plotNuclCriterion(phases, V, dV, Tc, vev_mag, makePlot=False,
         nucl = []
         for t in T:
             try:
+                badTunneling = []
                 n =  _tunnelFromPhaseAtT(t, phases, start_phase, V, dV,
                             phitol, overlapAngle, nuclCriterion,
                             fullTunneling_params, verbose, outdict, makePlot)
