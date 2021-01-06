@@ -1,0 +1,5 @@
+build
+Implementations/outputs/*
+*log
+*.pyc
+.DS_Store
