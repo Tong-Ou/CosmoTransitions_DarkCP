@@ -17,7 +17,7 @@ Usage functions are created to print/plot the scaning.
 """
 
 import sys
-sys.path.append('/home/tong/Work/EWPhT/cosmotransition_z2s/cosmoTransitions/')
+#sys.path.append('/home/tong/Work/EWPhT/cosmotransition_z2s/cosmoTransitions/')
 
 #import baseMo_s_b_cw as bmcw
 
@@ -35,7 +35,7 @@ import time
 import os
 
 
-#import mpi4py.MPI as mpi
+import mpi4py.MPI as mpi
 
 import math
 
@@ -43,7 +43,7 @@ import matplotlib.pyplot as plt
 
 import time
 
-#comm = mpi.COMM_WORLD
+comm = mpi.COMM_WORLD
 
 FILE = sys.argv[1]
 
@@ -79,7 +79,7 @@ vsr = [100., 500.]
 #csr = [0.,1.]
 
 #m12r = [-100000., 100000.]
-
+a
 #m22r = [-10000., 0.]
 
 npt = int(sys.argv[2])
