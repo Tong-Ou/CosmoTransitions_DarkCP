@@ -289,14 +289,12 @@ class generic_potential():
         vphy = [246., 0., 0.]
         phi1, phi2, phi3 = X[..., 0], X[...,1], X[...,2]
         #vphy = np.asanyarray(vphy, dtype=float)
-        gradVCW = self.gradVCW(vphy, T=0.)
-        d2VCW = self.d2VCW(vphy, T=0.)
-        delta_lh = (gradVCW[0] - vphy[0]*d2VCW[0][0])/(2*vphy[0]**3)
-        delta_muh = (3*gradVCW[0] - vphy[0]*d2VCW[0][0])/(2*vphy[0])
+        delta_lh = (self.gradVCW(vphy, T=0.)[0] - vphy[0]*self.d2VCW(vphy, T=0.)[0][0])/(2*vphy[0]**3)
+        delta_muh = (3*self.gradVCW(vphy, T=0.)[0] - vphy[0]*self.d2VCW(vphy, T=0.)[0][0])/(2*vphy[0])
         #re_rho = self.nd*self.m0**3*self.yd*np.cos(self.thetaY)*(np.log(self.m0**2/self.renormScaleSq)-1)/(32*np.pi**2)
         #im_rho = self.nd*self.m0**3*self.yd*np.sin(self.thetaY)*(np.log(self.m0**2/self.renormScaleSq)-1)/(32*np.pi**2)
-        re_rho = -gradVCW[1]
-        im_rho = gradVCW[2]
+        re_rho = -self.gradVCW(vphy, T=0.)[1]
+        im_rho = self.gradVCW(vphy, T=0.)[2]
         return -0.5*delta_muh*phi1**2 + 0.25*delta_lh*phi1**4 + (re_rho*phi2 - im_rho*phi3)
 
     def V1T(self, bosons, fermions, T, include_radiation=False):
@@ -343,11 +341,11 @@ class generic_potential():
         return y*T4/(2*np.pi*np.pi)
 
     def ch(self):
-        ch = 1/48 * (9*self.Y1**2 + 3*self.Y2**2 + 2*(6*self.Yt**2 + 12*self.lh + 2*self.lsh))
+        ch = 1/48. * (9.*self.Y1**2 + 3.*self.Y2**2 + 2.*(6.*self.Yt**2 + 12.*self.lh + 2.*self.lsh))
         return ch
 
     def cs(self):
-        cs = 1/12 * (2*self.lsh + 4*self.ls + self.yd**2)
+        cs = 1/12. * (2.*self.lsh + 4.*self.ls + self.yd**2/4.)
         return cs
 
     def V1T_from_X(self, X, T, include_radiation=False):
@@ -360,15 +358,16 @@ class generic_potential():
         T = np.asanyarray(T, dtype=float)
         X = np.asanyarray(X, dtype=float)
         
+        '''
         bosons = self.boson_massSq(X,T)
         fermions = self.fermion_massSq(X)
         y = self.V1T(bosons, fermions, T, include_radiation)   
 
         '''
         # High-T expansion
-        phi1, phi2 = X[...,0], X[...,1]
-        y = 0.5*self.ch()*phi1**2*T**2 + 0.5*self.cs()*phi2**2*T**2
-        '''
+        phi1, phi2, phi3 = X[...,0], X[...,1], X[...,2]
+        y = 0.5*(self.ch()*phi1**2 + self.cs()*(phi2**2+phi3**2) + 2.**0.5/24.*self.m0*self.yd*np.cos(self.thetaY)*phi2 - 2.**0.5/24.*self.m0*self.yd*np.sin(self.thetaY)*phi3)*T**2.
+        
         return y
 
     def Vtot(self, X, T, include_radiation=False):
@@ -403,6 +402,7 @@ class generic_potential():
         y = self.V0(X)
         y += self.V1(X, T)
         y += self.counterterm(X)
+        #y += self.V1T_from_X(X,T)
         y += self.V1T(bosons, fermions, T, include_radiation=False)
         return y
 
@@ -855,8 +855,11 @@ class generic_potential():
         if self.phases is None:
             self.getPhases()
         for key, p in self.phases.items():
-            V = self.DVtot(p.X,p.T) if useDV else self.Vtot(p.X,p.T)
-            plt.plot(p.T,V,**plotArgs)
+            VT = []
+            for i in range(len(p.X)):
+                V = self.DVtot(p.X[i],p.T[i]) if useDV else self.Vtot(p.X[i],p.T[i])
+                VT.append(V)
+            plt.plot(p.T,VT,**plotArgs)
         plt.xlabel(R"$T$")
         if useDV:
             plt.ylabel(R"$V[\phi_{min}(T), T] - V(0, T)$")

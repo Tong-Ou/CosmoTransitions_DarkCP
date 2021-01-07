@@ -99,16 +99,36 @@ class model(generic_potential.generic_potential):
         lsh = self.lsh
         muh2 = lh*self.vh2
         mus2 = ls*self.vs2
-        
-        # Tong: Mass corrections. See paper 2.2. Does A have mass correction?
-        # How to calculate these in presence of CP violation term?
+       
+
         ringh = (3.*self.Y1**2./16. + self.Y2**2./16. + self.lh/2 + self.Yt**2./4. + self.lsh/12.)*T**2.*phi1**0.
         rings = (self.ls/3. + self.lsh/6. + self.yd**2/48.)*T**2.*phi2**0.
         ringA = rings
         ringwl = 11.*self.Y1**2.*T**2.*phi1**0./6.
         ringbl = 11.*self.Y2**2.*T**2.*phi1**0./6.
         ringchi = (3.*self.Y1**2./16. + self.Y2**2./16. + self.lh/2. + self.Yt**2./4. + self.lsh/12.)*T**2.*phi1**0.
-        
+
+        mwl = 0.25*self.Y1**2.*phi1**2. + ringwl
+        mwt = 0.25*self.Y1**2.*phi1**2.
+
+        mzgla = 0.25*self.Y1**2.*phi1**2. + ringwl
+        mzglb = 0.25*self.Y2**2.*phi1**2. + ringbl
+        mzgc = - 0.25*self.Y1*self.Y2*phi1**2.
+        mzglA = .5*(mzgla + mzglb)
+        mzglB = np.sqrt(.25*(mzgla-mzglb)**2. + mzgc**2.)
+
+        mzgta = 0.25*self.Y1**2.*phi1**2.
+        mzgtb = 0.25*self.Y2**2.*phi1**2.
+        mzgtA = .5*(mzgta + mzgtb)
+        mzgtB = np.sqrt(.25*(mzgta-mzgtb)**2. + mzgc**2.)
+
+        mzl = mzglA + mzglB
+        mzt = mzgtA + mzgtB
+        mgl = mzglA - mzglB
+        mgt = mzgtA - mzgtB
+
+        mx = -muh2 + lh*phi1**2. + 0.5*lsh*phi2**2. + ringchi
+
         if phi1.ndim < 1:
             a = -muh2 + 3.*self.lh*phi1**2. + 0.5*self.lsh*(phi2**2+phi3**2) +ringh #mh^2
             b = -mus2 + 3.*self.ls*phi2**2. + self.ls*phi3**2. + 0.5*self.lsh*phi1**2. + 2.*self.ks2 +rings #ms^2
@@ -148,7 +168,9 @@ class model(generic_potential.generic_potential):
                         eig = np.linalg.eigvalsh(msq)
                         msqeig_dir.append(eig)
                     msqeig.append(msqeig_dir)
-        msqeig = np.asanyarray(msqeig, dtype=float)
+            
+        msqeig = np.array(msqeig)
+        M = np.array([msqeig[...,0], msqeig[...,1], msqeig[...,2], mwl, mwt, mzl, mzt, mgl, mgt, mx])
 
         '''
         A = c  #for calculation of eigenvalues of ((a,c),(c,b))
@@ -156,40 +178,17 @@ class model(generic_potential.generic_potential):
         C = 0.5*np.sqrt(a**2-2*a*b+b**2+4*mab**2)
         '''
         
-        mwl = 0.25*self.Y1**2.*phi1**2. + ringwl
-        mwt = 0.25*self.Y1**2.*phi1**2.
-        
-        mzgla = 0.25*self.Y1**2.*phi1**2. + ringwl
-        mzglb = 0.25*self.Y2**2.*phi1**2. + ringbl
-        mzgc = - 0.25*self.Y1*self.Y2*phi1**2.
-        mzglA = .5*(mzgla + mzglb)
-        mzglB = np.sqrt(.25*(mzgla-mzglb)**2. + mzgc**2.)
-        
-        mzgta = 0.25*self.Y1**2.*phi1**2.
-        mzgtb = 0.25*self.Y2**2.*phi1**2.
-        mzgtA = .5*(mzgta + mzgtb)
-        mzgtB = np.sqrt(.25*(mzgta-mzgtb)**2. + mzgc**2.)
-        
-        mzl = mzglA + mzglB
-        mzt = mzgtA + mzgtB
-        mgl = mzglA - mzglB
-        mgt = mzgtA - mzgtB
-        
-        mx = -muh2 + lh*phi1**2. + 0.5*lsh*phi2**2. + ringchi
- 
-        M = np.array([msqeig[...,0], msqeig[...,1], msqeig[...,2], mwl, mwt, mzl, mzt, mgl, mgt, mx])
         #print ('M before rollaxis: %s' % M)
 
 #        M = np.array([100, 100, 100, 100, 100, 100, 100, 100, 100])
-
+        
         M = np.rollaxis(M, 0, len(M.shape))
 
         dof = np.array([1, 1, 1, self.nwl, self.nwt, self.nzl, self.nzt, self.nzl, self.nzt, self.nx])
 
         c = np.array([1.5, 1.5, 1.5, 5./6., 5./6., 5./6., 5./6., 5./6., 5./6., 1.5])#check Goldstones
-               
+
         return M, dof, c
-        
  
     def fermion_massSq(self, X):
         X = np.asanyarray(X)
@@ -222,13 +221,14 @@ class model(generic_potential.generic_potential):
                     break
             if newPoint:
                 localMin.append(x)
+                
         return localMin
 
     def forbidPhaseCrit(self, X):
         """
         forbid negative phases for h (S and A could be negative due to the tadpole term in M_chi)
         """
-        #return any([np.array([X])[...,0] < -5.0, np.array([X])[...,1] < -5.0, np.array([X])[...,2] < 5.0])
+        #return any([np.array([X])[...,0] < -5.0, np.array([X])[...,1] < -5.0, np.array([X])[...,2] < -5.0])
         return np.array([X])[...,0] < -5.0
  
     

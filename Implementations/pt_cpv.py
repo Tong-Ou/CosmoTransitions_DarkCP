@@ -27,10 +27,10 @@ size = comm.Get_size()
 FILE = sys.argv[1]
 OUT_PATH = sys.argv[2]
 
-ncpu = 4
+ncpu = 1
 para_list = []
-for rank in range(ncpu):
-    filename = '%s_%s.npy' % (FILE, rank)
+for i in range(ncpu):
+    filename = '%s_%s.npy' % (FILE, i)
     if os.path.exists(filename):
         para = np.load(filename, allow_pickle = True)
         para_list.append(para)
@@ -66,7 +66,7 @@ for index in range(len(paras)):
         print("The T=0 potential of the model reads")
         
         bmt.vsh(mt, [-300., 300., -400., 400., 0.], 0., cmap='RdGy')
-        plt.savefig('%s/V0_%s.png' % (OUT_PATH, index))
+        plt.savefig('%s/V0_%s.pdf' % (OUT_PATH, index))
         plt.clf()
         
         print("\n")
@@ -79,23 +79,28 @@ for index in range(len(paras)):
         print("\n \n All the phase transitions of such a model are")
         
         mt.prettyPrintTcTrans()
+
+        print('The T-dependent phase potential reads')
+        mt.plotPhasesV()
+        plt.savefig('%s/V_T_%s.pdf' % (OUT_PATH, index))
+        plt.clf()
         
         print("And the T-dependent 'phase norm' reads")
         
         #plt.figure()
         mt.plotPhasesPhi()
         #plt.show()
-        plt.savefig('%s/phi_T_%s.png' % (OUT_PATH, index))
+        plt.savefig('%s/phi_T_%s.pdf' % (OUT_PATH, index))
         plt.clf()
         
         #plt.figure()
         mt.plotPhases2D()
         #plt.show()
-        plt.savefig('%s/vs_vh_%s.png' % (OUT_PATH, index))
+        plt.savefig('%s/vs_vh_%s.pdf' % (OUT_PATH, index))
         plt.clf()
 
         mt.plotPhase2DS()
-        plt.savefig('%s/vs_va_%s.png' % (OUT_PATH, index))
+        plt.savefig('%s/vs_va_%s.pdf' % (OUT_PATH, index))
         plt.clf()
         
         """
