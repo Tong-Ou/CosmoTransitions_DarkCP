@@ -30,7 +30,7 @@ import time
 import os
 
 
-import mpi4py.MPI as mpi
+#import mpi4py.MPI as mpi
 
 import math
 
@@ -38,9 +38,13 @@ import matplotlib.pyplot as plt
 
 import time
 
-comm = mpi.COMM_WORLD
+#comm = mpi.COMM_WORLD
 
-FILE = sys.argv[1]
+rank = int(sys.argv[1]) #task_id
+
+numtasks = int(sys.argv[2])
+
+FILE = sys.argv[3]
 
 t0 = time.clock()
 
@@ -64,9 +68,7 @@ m0r = [1e-3, 100.]
 
 vsr = [100., 500.]
 
-npt = int(sys.argv[2])
-
-scan = []
+npt = int(sys.argv[4])
 
 BASE_PATH = os.getcwd()
 
@@ -259,9 +261,9 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
         
     scan_task = range(npt)
     
-    rank = comm.Get_rank()
+    #rank = comm.Get_rank()
 
-    size = comm.Get_size()
+    #size = comm.Get_size()
         
     scan_rank = []
                 
@@ -288,18 +290,19 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
     yd_vh = []
     thetaY_vh = []
     m0_vh = []
+
+    logfile = '%s/%s_%s.log' % (BASE_PATH, FILE, rank)
+    log = open(logfile, 'w')
+    sys.stdout = log 
         
-    for n in scan_task:
-        
-        if n%size != rank: 
-            continue
-       
-        else:
-            logfile = '%s/%s_%s.log' % (BASE_PATH, FILE, rank)
-            if n==rank and os.path.exists(logfile):
-                os.remove(logfile) 
-	    log = open(logfile, 'a')
-            sys.stdout = log
+    for n in range(len(scan_task[rank:npt:numtasks])):
+	'''
+        logfile = '%s/%s_%s.log' % (BASE_PATH, FILE, rank)
+        if n==rank and os.path.exists(logfile):
+            os.remove(logfile) 
+	log = open(logfile, 'a')
+        sys.stdout = log
+	'''
 
         # Tong: generate random number between the given min and max
         # Why not create a np.linspace and scan one by one? - Not realistic for 5 parameters
@@ -314,9 +317,11 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
         #vslog = ran.uniform(vsmin,vsmax)
         vslog = 100.
         #m2log = ran.uniform(200, 250)
-        yd = ran.uniform(ydmin, ydmax)
+        #yd = ran.uniform(ydmin, ydmax)
+	yd = 4.
         thetaY = ran.uniform(thetaYmin, thetaYmax)
-        m0 = ran.uniform(m0min, m0max)
+        #m0 = ran.uniform(m0min, m0max)
+	m0 = 100.
 
         vh2 = vh**2
         vs2 = vslog**2
@@ -375,10 +380,10 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
 
         para_dict = { 'ls_novh':ls_novh, 'lsh_novh':lsh_novh, 'ls_nomh':ls_nomh, 'lsh_nomh':lsh_nomh,
                         'ls_vs':ls_vs, 'lsh_vs':lsh_vs, 'ls_vh':ls_vh, 'lsh_vh':lsh_vh,
-                        'yd_novh':yd_novh, 'm0_novh':m0_novh, 'thetaY_novh':thetaY_novh,
-			'yd_nomh':yd_nomh, 'm0_nomh':m0_nomh, 'thetaY_nomh':thetaY_nomh,
-                        'yd_vs':yd_vs, 'm0_vs':m0_vs, 'thetaY_vs':thetaY_vs,
-			'yd_vh':yd_vh, 'm0_vh':m0_vh, 'thetaY_vh':thetaY_vh}
+                        'yd_novh':yd_novh, 'thetaY_novh':thetaY_novh, 'm0_novh':m0_novh, 
+			'yd_nomh':yd_nomh, 'thetaY_nomh':thetaY_nomh, 'm0_nomh':m0_nomh,
+                        'yd_vs':yd_vs, 'thetaY_vs':thetaY_vs, 'm0_vs':m0_vs,
+			 'yd_vh':yd_vh, 'thetaY_vh':thetaY_vh, 'm0_vh':m0_vh}
         filename = '%s/%s_%s_plot.h5' % (BASE_PATH, FILE, rank)
         dd.io.save(filename, para_dict)
 

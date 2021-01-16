@@ -4,13 +4,15 @@ This script is to plot the viable parameter space based on results of ran_scan.p
 '''
 
 import numpy as np
+import matplotlib
+matplotlib.use('pdf')
 import matplotlib.pyplot as plt
 import sys 
 import deepdish as dd
 import argparse
 import os
 
-ncpu = 4
+#ncpu = 4
 
 ls_scan = np.zeros(0)
 ls_sfo = np.zeros(0)
@@ -43,6 +45,7 @@ def ls_range_IIa(lh, vh2, vs2, ks2):
 
 def plot_min(FILE, ncpu, lh, vh2, vs2, ks2, xlim, ylim):
 
+    '''
     for i in range(ncpu):
         para_dict = dd.io.load('%s_%s_plot.h5' % (FILE, i))
         ls_novh_i, ls_nomh_i, ls_vs_i, ls_vh_i = para_dict['ls_novh'], para_dict['ls_nomh'], para_dict['ls_vs'], para_dict['ls_vh']
@@ -72,8 +75,15 @@ def plot_min(FILE, ncpu, lh, vh2, vs2, ks2, xlim, ylim):
             m0_novh = np.concatenate((m0_novh, m0_novh_i), axis=0)
             m0_vs = np.concatenate((m0_vs, m0_vs_i), axis=0)
             m0_vh = np.concatenate((m0_vh, m0_vh_i), axis=0)
+	'''
+    para_dict = dd.io.load('%s_plot.h5' % FILE)
+    ls_novh, ls_nomh, ls_vs, ls_vh = para_dict['ls_novh'], para_dict['ls_nomh'], para_dict['ls_vs'], para_dict['ls_vh']
+    lsh_nomh, lsh_novh, lsh_vs, lsh_vh = para_dict['lsh_nomh'], para_dict['lsh_novh'], para_dict['lsh_vs'], para_dict['lsh_vh']
+    yd_novh, yd_nomh, yd_vs, yd_vh = para_dict['yd_novh'], para_dict['yd_nomh'], para_dict['yd_vs'], para_dict['yd_vh']
+    m0_novh, m0_nomh, m0_vs, m0_vh = para_dict['m0_novh'], para_dict['m0_nomh'], para_dict['m0_vs'], para_dict['m0_vh']    
 
     # Save the plotting variables to a single file
+    '''
     para_dict = { 'ls_novh':ls_novh, 'lsh_novh':lsh_novh, 'ls_nomh':ls_nomh, 'lsh_nomh':lsh_nomh,
                 'ls_vs':ls_vs, 'lsh_vs':lsh_vs, 'ls_vh':ls_vh, 'lsh_vh':lsh_vh,
                 'yd_novh':yd_novh, 'm0_novh':m0_novh, 'yd_nomh':yd_nomh, 'm0_nomh':m0_nomh,
@@ -82,6 +92,7 @@ def plot_min(FILE, ncpu, lh, vh2, vs2, ks2, xlim, ylim):
     if os.path.exists(filename):
         os.remove(filename)
     dd.io.save(filename, para_dict)
+    '''
 
     ls_min, ls_max = None, None
     ls_lim = ls_range_IIa(lh, vh2, vs2, ks2)
@@ -107,7 +118,7 @@ def plot_min(FILE, ncpu, lh, vh2, vs2, ks2, xlim, ylim):
     ax1.set_xlim(0., xlim)
     ax1.set_xlabel(r'$\lambda_{SH}$', size=15)
     ax1.set_ylabel(r'$\lambda_S$', size=15)
-    plt.show()
+    plt.savefig('%s_lsh_ls.pdf' % (FILE))
 
     fig2 = plt.figure(figsize=(8,6))
     ax2 = plt.subplot(111)
@@ -118,7 +129,7 @@ def plot_min(FILE, ncpu, lh, vh2, vs2, ks2, xlim, ylim):
     ax2.legend(fontsize=15, loc='upper right')
     ax2.set_xlabel(r'$m_0\ [GeV]$', size=15)
     ax2.set_ylabel(r'$\lambda$', size=15)
-    plt.show()
+    plt.savefig('%s_m0_yd.pdf' % (FILE))
 
 def plot_min_ana(lh, vh2, vs2, ks2, xlim, ylim):
 
@@ -147,7 +158,7 @@ def plot_min_ana(lh, vh2, vs2, ks2, xlim, ylim):
     ax1.set_xlim(0., xlim)
     ax1.set_xlabel(r'$\lambda_{SH}$', size=15)
     ax1.set_ylabel(r'$\lambda_S$', size=15)
-    plt.show()
+    plt.savefig('%s_lsh_ls_ana.pdf' % (FILE))
 
 def plot_sfo(FILE, ncpu):
     for i in range(ncpu):

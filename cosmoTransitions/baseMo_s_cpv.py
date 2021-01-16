@@ -73,7 +73,7 @@ class model(generic_potential.generic_potential):
         self.nx = 3
         
         self.nt = 12
-        self.nd = 1
+        self.nd = 12
 
 
     def test(self):
@@ -127,7 +127,7 @@ class model(generic_potential.generic_potential):
         mgl = mzglA - mzglB
         mgt = mzgtA - mzgtB
 
-        mx = -muh2 + lh*phi1**2. + 0.5*lsh*phi2**2. + ringchi
+        mx = -muh2 + lh*phi1**2. + 0.5*lsh*(phi2**2.+phi3**2.) + ringchi
 
         if phi1.ndim < 1:
             a = -muh2 + 3.*self.lh*phi1**2. + 0.5*self.lsh*(phi2**2+phi3**2) +ringh #mh^2
