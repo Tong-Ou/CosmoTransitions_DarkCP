@@ -345,7 +345,7 @@ class generic_potential():
         return ch
 
     def cs(self):
-        cs = 1/12. * (2.*self.lsh + 4.*self.ls + self.yd**2/4.)
+        cs = 1/12. * (2.*self.lsh + 4.*self.ls + 3.*self.yd**2)
         return cs
 
     def V1T_from_X(self, X, T, include_radiation=False):
@@ -366,7 +366,7 @@ class generic_potential():
         '''
         # High-T expansion
         phi1, phi2, phi3 = X[...,0], X[...,1], X[...,2]
-        y = 0.5*(self.ch()*phi1**2 + self.cs()*(phi2**2+phi3**2) + 2.**0.5/24.*self.m0*self.yd*np.cos(self.thetaY)*phi2 - 2.**0.5/24.*self.m0*self.yd*np.sin(self.thetaY)*phi3)*T**2.
+        y = 0.5*(self.ch()*phi1**2 + self.cs()*(phi2**2+phi3**2) + 2.**0.5/2.*self.m0*self.yd*np.cos(self.thetaY)*phi2 - 2.**0.5/2.*self.m0*self.yd*np.sin(self.thetaY)*phi3)*T**2.
         
         return y
 
