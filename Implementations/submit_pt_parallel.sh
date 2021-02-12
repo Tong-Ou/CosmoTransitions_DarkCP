@@ -3,9 +3,9 @@
 #SBATCH --time=24:00:00
 #SBATCH --job-name=calcpt
 #SBATCH --partition=cpu_gce
-#SBATCH --ntasks=100
+#SBATCH --ntasks=8
 #SBATCH --qos=regular
-#SBATCH -a 0-99
+#SBATCH -a 0-7
 #SBATCH --error="slurm_pt_cpv.err"
 
 #This script is adapted from the example from https://rcc.uchicago.edu/docs/tutorials/kicp-tutorials/running-jobs.html.
@@ -28,7 +28,7 @@ srun="srun -N1 -n1"
 # parallel uses ::: to separate options. Here {0..99} is a shell expansion
 # so parallel will run the command passing the numbers 0 through 99
 # via argument {1}
-FILE="outputs/full_potential_cpv/ks23000_vs100/scan_r3"
-OUTPATH="outputs/full_potential_cpv/ks23000_vs100/scan_r3_pt"
+FILE="outputs/full_potential_cpv/full_scan/scan_r7"
+OUTPATH="outputs/full_potential_cpv/full_scan/scan_r7_pt/full_potential/fix_V1T"
 #$parallel "$srun python pt_cpv.py {1} $SLURM_NTASKS $FILE $OUTPATH" ::: {0..99}
 $srun python pt_cpv.py $SLURM_ARRAY_TASK_ID $SLURM_NTASKS $FILE $OUTPATH

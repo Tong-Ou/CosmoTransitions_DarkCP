@@ -1,11 +1,11 @@
 #!/bin/sh
 
 #SBATCH --job-name=scanbm
-#SBATCH --partition=cpu_gce_test
-#SBATCH --ntasks=20
-#SBATCH --qos=test
-#SBATCH -a 0-19
-#SBATCH --error="ran_scan_cpv.err"
+#SBATCH --partition=cpu_gce
+#SBATCH --ntasks=100
+#SBATCH --qos=regular
+#SBATCH -a 0-99
+#SBATCH --error="slurm_scan.err"
 
 #This script is adapted from the example from https://rcc.uchicago.edu/docs/tutorials/kicp-tutorials/running-jobs.html.
 #module load parallel
@@ -27,7 +27,7 @@ srun="srun --exclusive -N1 -n1"
 # parallel uses ::: to separate options. Here {0..99} is a shell expansion
 # so parallel will run the command passing the numbers 0 through 99
 # via argument {1}
-FILE="outputs/full_potential_cpv/ks23000_vs100/scan_r9"
+FILE="outputs/full_potential_cpv/full_scan/scan_r7"
 NPT=5000
 #$parallel "$srun python ran_scan_cpv_nompi.py {1} $SLURM_NTASKS $FILE $NPT" ::: {0..99}
 $srun python ran_scan_cpv_parallel.py $SLURM_ARRAY_TASK_ID $SLURM_NTASKS $FILE $NPT

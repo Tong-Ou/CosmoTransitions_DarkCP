@@ -35,14 +35,14 @@ FILE = sys.argv[3]
 OUT_PATH = sys.argv[4]
 
 if not os.path.isdir(OUT_PATH):
-    os.mkdir(OUT_PATH)
+    os.makedirs(OUT_PATH)
 
 filename = '%s.npy' % FILE
 paras = None
 if os.path.exists(filename):
     paras = np.load(filename, allow_pickle = True)
 else:
-    ncpu = 100
+    ncpu = numtasks
     para_list = []
     for i in range(ncpu):
         filename = '%s_%s.npy' % (FILE, i)
@@ -56,8 +56,9 @@ else:
 
 #fig = plt.figure()
 
-scan_task = range(len(paras))
-rank_task = scan_task[rank:len(paras):numtasks]
+#scan_task = range(len(paras))
+scan_task = [40, 1, 63, 44, 25, 47, 57, 17]
+rank_task = scan_task[rank:len(scan_task):numtasks]
 logfile = '%s/pt_%s.log' % (OUT_PATH, rank)
 log = open(logfile, 'w')
 sys.stdout = log
@@ -145,8 +146,8 @@ for index in rank_task:
     mt.prettyPrintTnTrans()
     
     
-    
+    '''
     mt.plotNuclCriterion()
     plt.savefig('%s/S_T_%s.png' % (OUT_PATH, index))
     plt.clf()
-   
+    '''

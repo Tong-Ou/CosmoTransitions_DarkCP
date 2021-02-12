@@ -358,7 +358,7 @@ class generic_potential():
         T = np.asanyarray(T, dtype=float)
         X = np.asanyarray(X, dtype=float)
         
-        '''
+        # Full potential
         bosons = self.boson_massSq(X,T)
         fermions = self.fermion_massSq(X)
         y = self.V1T(bosons, fermions, T, include_radiation)   
@@ -367,7 +367,7 @@ class generic_potential():
         # High-T expansion
         phi1, phi2, phi3 = X[...,0], X[...,1], X[...,2]
         y = 0.5*(self.ch()*phi1**2 + self.cs()*(phi2**2+phi3**2) + 2.**0.5/2.*self.m0*self.yd*np.cos(self.thetaY)*phi2 - 2.**0.5/2.*self.m0*self.yd*np.sin(self.thetaY)*phi3)*T**2.
-        
+        '''
         return y
 
     def Vtot(self, X, T, include_radiation=False):
@@ -397,13 +397,13 @@ class generic_potential():
         '''
         T = np.asanyarray(T, dtype=float)
         X = np.asanyarray(X, dtype=float)
-        bosons = self.boson_massSq(X,T)
-        fermions = self.fermion_massSq(X)
+        #bosons = self.boson_massSq(X,T)
+        #fermions = self.fermion_massSq(X)
         y = self.V0(X)
         y += self.V1(X, T)
         y += self.counterterm(X)
-        #y += self.V1T_from_X(X,T)
-        y += self.V1T(bosons, fermions, T, include_radiation=False)
+        y += self.V1T_from_X(X,T)
+        #y += self.V1T(bosons, fermions, T, include_radiation=False)
         return y
 
     def DVtot(self, X, T):

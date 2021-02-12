@@ -53,24 +53,31 @@ t0 = time.clock()
 lh = 0.129
 vh = 246.
 
-lsr = [0., 6.]
+lsr = [0., 4.]
 
-lshr = [0., 4*np.pi]
+lshr = [0., 10.]
 
-ks2r = [0., 100.]
+ks2r = [0.1, 6000.]
 
 #ydr = [1e-2, 10.]
-ydr = [1e-2, 10.]
+ydr = [1e-2, 4.]
 thetaYr = [0., 2*np.pi]
 
-#m0r = [1e-3, 1e3]
-m0r = [1e-3, 100.]
+m0r = [1e-3, 500.]
+#m0r = [1e-3, 100.]
 
 vsr = [100., 500.]
 
 npt = int(sys.argv[4])
 
 BASE_PATH = os.getcwd()
+
+def ls_max(lh, vh2, vs2, ks2):
+    if lh**2*vh2**4-8.*lh*vh2**2*ks2*vs2 >= 0:
+	ls_max = (lh*vh2**2-4.*ks2*vs2+np.sqrt(lh**2*vh2**4-8.*lh*vh2**2*ks2*vs2))/(2.*vs2**2)
+        return ls_max
+    else:
+	return lh*vh2**2/(2.*vs2**2)
 
 def physpara(m):
     print ('\n')
@@ -308,25 +315,28 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
         # Why not create a np.linspace and scan one by one? - Not realistic for 5 parameters
         #l1 = ran.uniform(l1min,l1max)
         l1 = lh
-        l2 = ran.uniform(l2min,l2max)
+        #l2 = ran.uniform(l2min,l2max)
         #l2 = ran.uniform(0, 5.)
         lm = ran.uniform(lmmin,lmmax)
-        #ks2 = ran.uniform(ks2min, ks2max)
-        ks2 = 3000.
+        ks2 = ran.uniform(ks2min, ks2max)
+        #ks2 = 3000.
         #m1log = ran.uniform(m1min,m1max)
-        #vslog = ran.uniform(vsmin,vsmax)
-        vslog = 100.
+        vslog = ran.uniform(vsmin,vsmax)
+        #vslog = 200.
         #m2log = ran.uniform(200, 250)
-        #yd = ran.uniform(ydmin, ydmax)
-	yd = 4.
+        yd = ran.uniform(ydmin, ydmax)
+	#yd = 3.
         thetaY = ran.uniform(thetaYmin, thetaYmax)
-        #m0 = ran.uniform(m0min, m0max)
-	m0 = 100.
+        m0 = ran.uniform(m0min, m0max)
+	#m0 = 100.
 
         vh2 = vh**2
         vs2 = vslog**2
+
+	lsmax = ls_max(l1, vh2, vs2, ks2)
+	l2 = ran.uniform(l2min, 2.*lsmax)
                  
-        v2re = 600.**2.
+        v2re = 172.9**2.
     
         # Zero-T global minimum condition (valid at tree-level)
         '''
@@ -387,77 +397,10 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
         filename = '%s/%s_%s_plot.h5' % (BASE_PATH, FILE, rank)
         dd.io.save(filename, para_dict)
 
-        #Tong: Constraints: 1. Higgs mass and vev.
-        '''            
-        if all((vphy <= 248., vphy >= 244.)):
-            
-            if all ((m1phy <= 127., m1phy >= 123.)):
-
-                scan_rank.append([m12, m22, l1, l2, lm, ks2, yd, thetaY, m0, v2re, vphy, m1phy, localMin])
-                filename = '%s_%s' % (FILE, rank)
-                np.save(os.path.join(BASE_PATH, filename), scan_rank)
-
-                
-                # 2. FO condition
-                fo, foph, sfo, sfoph = trans(n, mcwd)
-           
-            #if all((m1phy <= 127., m1phy >= 123., sintphy <= .4)) or all((m2phy <= 127., m2phy >= 123., (1. - sintphy**2.)**.5 <= .4)):
-                                
-                if sfo:
-                    ch = mcwd.ch()
-                    cs = mcwd.cs()
-                    if cs*l1*m12 >= ch*l2*m22:
-                        diff1 = cs*l1*m12 - ch*l2*m22
-                        print ('\n')
-                        print ('cs*lh*vh2 - ch*ls*vs2 = %s' % diff1)
-                        print ('WARNING: Strong first-order transition found without satisfying high-T conditions.')
-                    else:
-                        print ('Find strong first-order transition!!')
-                    """
-                    scan_rank.append([m12, m22, l1, l2, lm, yd, v2re, vphy, tanbphy, m1phy, m2phy, sintphy])
-          
-                    filename = '%s_%s' % (FILE, rank)
-          
-                    np.save(os.path.join(BASE_PATH, filename), scan_rank)
-                    """
-                    ls_sfo.append(l2)
-                    lsh_sfo.append(lm)
-                    yd_sfo.append(yd)
-                    ks2_sfo.append(ks2)
-
-                if fo:
-                    if not sfo:
-                        yd_fo.append(yd)
-                        # v/Tc
-                        # sh_fo.append(foph[0])
-                        ls_fo.append(l2)
-                        lsh_fo.append(lm)
-                        ks2_fo.append(ks2)
-                
-                    scan_rank.append([m12, m22, l1, l2, lm, ks2, yd, thetaY, m0, v2re, vphy, tanbphy, m1phy, m2phy, sintphy])
-                    filename = '%s_%s' % (FILE, rank)
-                    np.save(os.path.join(BASE_PATH, filename), scan_rank)
-
-                else:
-        
-                    ls_scan.append(l2)
-                    lsh_scan.append(lm)
-                    yd_scan.append(yd)
-                    ks2_scan.append(ks2)
-                
-            else:
-                                    
-                pass
-        
-        else:
-            
-            pass
-    
-    '''
-                                               
-scan = getscan(lsr, lshr, ks2r, vsr, ydr, thetaYr, m0r, npt)
-tf = time.clock()
-dt = tf-t0
-print ('Run time: %s' % dt)
+if __name__ == "__main__":   
+    scan = getscan(lsr, lshr, ks2r, vsr, ydr, thetaYr, m0r, npt)
+    tf = time.clock()
+    dt = tf-t0
+    print ('Run time: %s' % dt)
 
 
