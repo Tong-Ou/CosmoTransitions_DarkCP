@@ -359,6 +359,7 @@ class generic_potential():
         X = np.asanyarray(X, dtype=float)
         
         # Full potential
+	
         bosons = self.boson_massSq(X,T)
         fermions = self.fermion_massSq(X)
         y = self.V1T(bosons, fermions, T, include_radiation)   
@@ -679,6 +680,19 @@ class generic_potential():
         self.phases = phases
         transitionFinder.removeRedundantPhases(
             self.Vtot, phases, self.x_eps*1e-2, self.x_eps*10)
+	# Find high-T phase and EW phase
+	V0 = 1e50
+	low_key = 0
+	for key, p in self.phases.items():
+	    if p.T[-1] >= tstop:
+		print ('High-T phase: %s' % p.key)
+	    # T[0] should be within dtstart from 0.0
+	    if p.T[0] <= 1.0:
+		xlow = p.X[0]	
+		if self.Vtot(xlow, p.T[0]) < V0:
+		    V0 = self.Vtot(xlow, p.T[0])
+		    low_key = p.key
+	print ('Zero-T phase: %s' % low_key)
         return self.phases
 
     def calcTcTrans(self, vphy, zeroTLocalMin, startHigh = False):
@@ -877,7 +891,8 @@ class generic_potential():
         plt.ylabel(R"$\phi(T)$")
 
     # Functions added by Tong
-    def plotNuclCriterion(self, tunnelFromPhase_args={}):
+    def plotNuclCriterion(self, phases, OUT_PATH = '.', index = 0, tunnelFromPhase_args={}):
+	'''
         Tc = 1
         vev_mag = 0
         if self.phases is None:
@@ -892,7 +907,8 @@ class generic_potential():
                     vev_mag = np.sum(xlow**2, -1)**0.5
                 else:
                     continue
-        transitionFinder.plotNuclCriterion(self.phases, self.Vtot, self.gradV, Tc, vev_mag, tunnelFromPhase_args)
+	'''
+        transitionFinder.plotNuclCriterion(phases, OUT_PATH, index, self.Vtot, self.gradV)
 
 
 # END GENERIC_POTENTIAL CLASS ------------------

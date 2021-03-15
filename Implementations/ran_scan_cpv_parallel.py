@@ -55,7 +55,7 @@ vh = 246.
 
 lsr = [0., 4.]
 
-lshr = [0., 10.]
+lshr = [0., 4.*np.pi]
 
 ks2r = [0.1, 6000.]
 
@@ -318,17 +318,17 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
         #l2 = ran.uniform(l2min,l2max)
         #l2 = ran.uniform(0, 5.)
         lm = ran.uniform(lmmin,lmmax)
-        ks2 = ran.uniform(ks2min, ks2max)
-        #ks2 = 3000.
+        #ks2 = ran.uniform(ks2min, ks2max)
+        ks2 = 3000.
         #m1log = ran.uniform(m1min,m1max)
-        vslog = ran.uniform(vsmin,vsmax)
-        #vslog = 200.
+        #vslog = ran.uniform(vsmin,vsmax)
+        vslog = 100.
         #m2log = ran.uniform(200, 250)
-        yd = ran.uniform(ydmin, ydmax)
-	#yd = 3.
+        #yd = ran.uniform(ydmin, ydmax)
+	yd = 0.5
         thetaY = ran.uniform(thetaYmin, thetaYmax)
-        m0 = ran.uniform(m0min, m0max)
-	#m0 = 100.
+        #m0 = ran.uniform(m0min, m0max)
+	m0 = 100.
 
         vh2 = vh**2
         vs2 = vslog**2

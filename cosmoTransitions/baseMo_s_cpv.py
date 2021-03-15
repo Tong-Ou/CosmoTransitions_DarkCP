@@ -168,7 +168,8 @@ class model(generic_potential.generic_potential):
                         eig = np.linalg.eigvalsh(msq)
                         msqeig_dir.append(eig)
                     msqeig.append(msqeig_dir)
-            
+
+        # Note: Returned eigenvalues are in ascending order, not in the order of a,b,c!!    
         msqeig = np.array(msqeig)
         M = np.array([msqeig[...,0], msqeig[...,1], msqeig[...,2], mwl, mwt, mzl, mzt, mgl, mgt, mx])
 

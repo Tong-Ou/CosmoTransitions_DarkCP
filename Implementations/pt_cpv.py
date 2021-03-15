@@ -15,17 +15,21 @@ import matplotlib.pyplot as plt
 import sys
 
 import os
+import time
 
 #import baseMo_s_t as bmt
 import baseMo_s_cpv as bmt
 
 import numpy as np
+import deepdish as dd
 
 #import mpi4py.MPI as mpi
 
 #comm = mpi.COMM_WORLD
 #rank = comm.Get_rank()
 #size = comm.Get_size()
+
+t0 = time.clock()
 
 rank = int(sys.argv[1]) #task_id
 
@@ -56,13 +60,15 @@ else:
 
 #fig = plt.figure()
 
-#scan_task = range(len(paras))
-scan_task = [40, 1, 63, 44, 25, 47, 57, 17]
+scan_task = range(len(paras))
+#scan_task = [40, 1, 63, 44, 25, 47, 57, 17]
 rank_task = scan_task[rank:len(scan_task):numtasks]
 logfile = '%s/pt_%s.log' % (OUT_PATH, rank)
 log = open(logfile, 'w')
 sys.stdout = log
+phase_dict = {}
 
+#rank_task = [162, 462]
 for index in rank_task:
 
     para = paras[index]
@@ -88,6 +94,9 @@ for index in rank_task:
     print("\n")
      
     print("Now let's find the phase transitions:")
+
+    phases = mt.getPhases(vphy, zeroTLocalMin)
+    phase_dict.update({index:phases})
     
     mt.calcTcTrans(vphy, zeroTLocalMin)
     
@@ -151,3 +160,9 @@ for index in rank_task:
     plt.savefig('%s/S_T_%s.png' % (OUT_PATH, index))
     plt.clf()
     '''
+
+# Save phases
+dd.io.save('%s/phases_%s.h5' % (OUT_PATH, rank), phase_dict)
+
+t1 = time.clock()
+print ('Run time: %s' % (t1-t0))

@@ -73,31 +73,31 @@ def plot_min(FILE, ncpu, lh, vh2, vs2, ks2, xlim, ylim):
     ax1 = fig.add_subplot(spec[0,0])
     lshr = np.linspace(0., 4*np.pi, 100)
     
-    '''
+    
     ax1.plot(lshr, ls_max_nontach(lshr, vh2, vs2, ks2), c='black')
     #ax1.plot(lshr, ls_max_IIc(lshr, lh), c='magenta')
     if ls_min is not None:
         ax1.plot(lshr, ls_min, c='blue')
         ax1.plot(lshr, ls_max, c='blue')
-    '''
+    
     # Plot args
     size = 10.
-    evenly_spaced_interval = np.linspace(0, 1, 7)
-    colors = [plt.cm.rainbow(x) for x in evenly_spaced_interval]
+    evenly_spaced_interval = range(7)
+    colors = [plt.cm.Dark2(x) for x in evenly_spaced_interval]
     
-    ax1.scatter(lsh_novh, ls_novh, s=size, c='black', alpha=0.5, label='false Higgs vev')
-    ax1.scatter(lsh_nomh, ls_nomh, s=size, c='grey', alpha=0.5, label='false Higgs mass')
+    ax1.scatter(lsh_novh, ls_novh, s=size, c='grey', alpha=0.5, label='false Higgs vev')
+    ax1.scatter(lsh_nomh, ls_nomh, s=size, c='black', alpha=0.8, label='false Higgs mass')
     ax1.scatter(lsh_inf, ls_inf, s=size, c=colors[0], alpha=0.5, label='Potential not bounded from below')
-    ax1.scatter(lsh_va, ls_va, s=size, c=colors[1], alpha=0.5, label=r'$V(0,0,a)<V(h,0,0), |a|>0$')
-    ax1.scatter(lsh_vs, ls_vs, s=size, c=colors[2], alpha=0.5, label=r'$V(0,s,0)<V(h,0,0), |s|>0$')
-    ax1.scatter(lsh_sa, ls_sa, s=size, c=colors[3], alpha=0.7, label=r'$V(0,s,a)<V(h,0,0), |s|>|a|>0$')
-    ax1.scatter(lsh_as, ls_as, s=size, c=colors[4], alpha=0.7, label=r'$V(0,s,a)<V(h,0,0), |a|>|s|>0$')
-    ax1.scatter(lsh_orig, ls_orig, s=size, c=colors[5], alpha=0.5, label=r'$V(0,0,0)<V(h,0,0)$')
-    ax1.scatter(lsh_none, ls_none, s=size, c=colors[6], alpha=0.5, label=r'false global minimum')
+    ax1.scatter(lsh_va, ls_va, s=size, c=colors[1], alpha=0.8, label=r'$V(0,0,a)<V(h,0,0), |a|>0$')
+    ax1.scatter(lsh_vs, ls_vs, s=size, c=colors[2], alpha=0.8, label=r'$V(0,s,0)<V(h,0,0), |s|>0$')
+    ax1.scatter(lsh_sa, ls_sa, s=size, c=colors[3], alpha=0.8, label=r'$V(0,s,a)<V(h,0,0), |s|>|a|>0$')
+    ax1.scatter(lsh_as, ls_as, s=size, c=colors[4], alpha=0.5, label=r'$V(0,s,a)<V(h,0,0), |a|>|s|>0$')
+    ax1.scatter(lsh_orig, ls_orig, s=size, c=colors[5], alpha=0.8, label=r'$V(0,0,0)<V(h,0,0)$')
+    ax1.scatter(lsh_none, ls_none, s=size, c=colors[6], alpha=0.8, label=r'false global minimum')
     ax1.scatter(lsh_vh, ls_vh, s=size, c='red', label='meet BC')
     ax1.legend(fontsize=10, loc='upper right', bbox_to_anchor=(1.55, 1))
-    #ax1.set_ylim(0., ylim)
-    #ax1.set_xlim(0., xlim)
+    ax1.set_ylim(0., ylim)
+    ax1.set_xlim(0., xlim)
     ax1.set_xlabel(r'$\lambda_{SH}$', size=15)
     ax1.set_ylabel(r'$\lambda_S$', size=15)
     plt.savefig('%s_lsh_ls_2.pdf' % (FILE))
@@ -151,77 +151,13 @@ def plot_min_ana(lh, vh2, vs2, ks2, xlim, ylim):
     ax1.set_ylabel(r'$\lambda_S$', size=15)
     plt.savefig('%s_lsh_ls_ana.pdf' % (FILE))
 
-def plot_sfo(FILE, ncpu):
-    for i in range(ncpu):
-        para_dict = dd.io.load('%s_%s_plot.h5' % (FILE, i))
-        ls_scan_i, ls_fo_i, ls_sfo_i = para_dict['ls_scan'], para_dict['ls_fo'], para_dict['ls_sfo']
-        lsh_scan_i, lsh_fo_i, lsh_sfo_i = para_dict['lsh_scan'], para_dict['lsh_fo'], para_dict['lsh_sfo']
-        yd_scan_i, yd_fo_i, yd_sfo_i = para_dict['yd_scan'], para_dict['yd_fo'], para_dict['yd_sfo']
-    
-        if i == 0:
-            ls_scan, ls_fo, ls_sfo = ls_scan_i, ls_fo_i, ls_sfo_i
-            lsh_scan, lsh_fo, lsh_sfo = lsh_scan_i, lsh_fo_i, lsh_sfo_i
-            yd_scan, yd_fo, yd_sfo = yd_scan_i, yd_fo_i, yd_sfo_i
-        else:
-            ls_scan = np.concatenate((ls_scan, ls_scan_i), axis=0)
-            ls_fo = np.concatenate((ls_fo, ls_fo_i), axis=0)
-            ls_sfo = np.concatenate((ls_sfo, ls_sfo_i), axis=0)
-            lsh_scan = np.concatenate((lsh_scan, lsh_scan_i), axis=0)
-            lsh_fo = np.concatenate((lsh_fo, lsh_fo_i), axis=0)
-            lsh_sfo = np.concatenate((lsh_sfo, lsh_sfo_i), axis=0)
-            yd_scan = np.concatenate((yd_scan, yd_scan_i), axis=0)
-            yd_fo = np.concatenate((yd_fo, yd_fo_i), axis=0)
-            yd_sfo = np.concatenate((yd_sfo, yd_sfo_i), axis=0)
-    
-    lh = 0.129
-    vh2 = 246.**2 #pay attention to the dtype!!
-    vs2 = 150.**2
-    ls = 2.
-    ch = (9*0.65**2+3*0.35**2+2*(6*0.9911**2+12*lh))/48
-    
-    def yd_max(lsh):
-        return 12*((ls/lh)*(vs2/vh2)*(ch+lsh/12.+lh)-(lh*ls)**0.5)-2*lsh-4*ls
-    
-    plt.figure(figsize=(12,5))
-    ax = plt.subplot(121)
-    ax.scatter(ls_scan, lsh_scan, c='black', label='Scan Points')
-    ax.scatter(ls_fo, lsh_fo, c='blue', label='First-order Trans')
-    ax.scatter(ls_sfo, lsh_sfo, c='red', label=r'$v_c/T_c>1$')
-    ax.legend()
-    ax.set_xlabel(r'$\lambda_S$')
-    ax.set_ylabel(r'$\lambda_{SH}$')
-    ax.grid(True)
-    
-    ax = plt.subplot(122)
-    #ax.scatter(yd_fo, sh_fo, c='blue', label='First-order Trans')
-    #ax.scatter(yd_sfo, sh_sfo, c='red', label='sfo')
-    #ax.legend()
-    #ax.set_xlabel(r'$y_d$')
-    #ax.set_ylabel(r'$v_c/T_c$')
-    #ax.grid(True)
-    #
-    #plt.show()    
-    
-    #plt.figure()
-    lsh = np.linspace(0, 4*np.pi, 100)
-    plt.scatter(lsh_scan, np.square(yd_scan), c='black', label='Scan Points')
-    plt.scatter(lsh_fo, np.square(yd_fo), c='blue', label='First-order Trans')
-    plt.scatter(lsh_sfo, np.square(yd_sfo), c='red', label=r'$v_c/T_c>1$')
-    if not fullScan:
-        plt.plot(lsh, yd_max(lsh), linewidth=2., c='black', label=r'Upper bound for $|y_d|^2$ from high-T')
-    #plt.ylim(0,5)
-    plt.legend()
-    plt.xlabel(r'$\lambda_{SH}$')
-    plt.ylabel(r'$|y_d|^2$')
-    plt.show()
-
 #===================================================
 #Main function
 #===================================================
 lh = 0.129
 vh2 = 246.**2
-vs2 = 200.**2
-ks2 = 500.
+vs2 = 100.**2
+ks2 = 3000.
 
-plot_min(FILE, 4, lh, vh2, vs2, ks2, 10., 4.)
+plot_min(FILE, 4, lh, vh2, vs2, ks2, 4*np.pi, 7.)
 #plot_min_ana(lh, vh2, vs2, ks2, 4*np.pi, 4*np.pi)

@@ -696,16 +696,20 @@ def _tunnelFromPhaseAtT(T, phases, start_phase, V, dV,
     tunnel_list = []
     for key in phases.keys():
         if key == start_phase.key:
+	    #print ('Skipping start phase')
             continue
         # Skip the phases encountering exceptions before.
-        if (start_phase.key, key) in badTunneling:
-            continue
+        #if (start_phase.key, key) in badTunneling:
+	    #print ('Skipping bad tunneling')
+         #   continue
         p = phases[key]
         if (p.T[0] > T or p.T[-1] < T):
+	    #print ('No temperature overlap')
             continue
         x1 = fmin(p.valAt(T))
         V1 = V(x1, T)
         if V1 >= V0:
+	    #print ('V1>V0')
             continue
         tdict = dict(low_vev=x1, high_vev=x0, Tnuc=T,
                      low_phase=key, high_phase=start_phase.key)
@@ -747,20 +751,23 @@ def _tunnelFromPhaseAtT(T, phases, start_phase, V, dV,
             tdict['instanton'] = tobj
             tdict['action'] = tobj.action
             tdict['trantype'] = 1
+	# Errors arising from tunneling
         except KeyError as err:
-            badTunneling.append((tdict['high_phase'], tdict['low_phase']))
+            #badTunneling.append((tdict['high_phase'], tdict['low_phase']))
             print ('Skipping tunneling from phase %s to phase %s due to KeyError %s'% (tdict['high_phase'],tdict['low_phase'],err))
             continue
         except ValueError as err: 
-            badTunneling.append((tdict['high_phase'], tdict['low_phase']))
+            #badTunneling.append((tdict['high_phase'], tdict['low_phase']))
             print ('Skipping tunneling from phase %s to phase %s due to ValueError %s'% (tdict['high_phase'],tdict['low_phase'],err))
             continue
         except tunneling1D.PotentialError as err:
-            badTunneling.append((tdict['high_phase'], tdict['low_phase']))
+            #badTunneling.append((tdict['high_phase'], tdict['low_phase']))
             if err.args[1] == "no barrier":
+		print ('Tunneling1D potential error: no barrier')
                 tdict['trantype'] = 0
                 tdict['action'] = 0.0
             elif err.args[1] == "stable, not metastable":
+		print ('Tunneling1D potential error: stable, not metastable')
                 tdict['trantype'] = 0
                 tdict['action'] = np.inf
             else:
@@ -770,6 +777,7 @@ def _tunnelFromPhaseAtT(T, phases, start_phase, V, dV,
             lowest_action = tdict['action']
             lowest_tdict = tdict
     outdict[T] = lowest_tdict
+    print ('Lowest action: %s' % lowest_action)
     return nuclCriterion(lowest_action, T)
 
 
@@ -892,7 +900,9 @@ def tunnelFromPhase(phases, start_phase, V, dV, Tmax, makePlot=False,
                 # It's important to make an appropriate initial guess;
                 # otherwise the minimization routine may get get stuck in a
                 # region where the action is infinite. Modify Tmax.
+		print ('f(a) and f(b) have the same signs. But tunneling is still possible. Re-determine Tmin and Tmax.')
                 Tmax = _maxTCritForPhase(phases, start_phase, V, Ttol)
+		print ('New Tmax: %s' % Tmax)
 
                 def abort_fmin(T, outdict=outdict, nc=nuclCriterion):
                     T = T[0]  # T is an array of size 1
@@ -907,8 +917,10 @@ def tunnelFromPhase(phases, start_phase, V, dV, Tmax, makePlot=False,
                                          callback=abort_fmin)[0]
                 except StopIteration as err:
                     Tmin = err.args[0]
+		print ('New Tmin: %s' % Tmin)
                 if nuclCriterion(outdict[Tmin]['action'], Tmin) > 0:
                     # no tunneling possible
+		    print ('f(a) and f(b) still have the same signs. No tunneling possible.')
                     return None
                 badTunneling = []
                 Tnuc = optimize.brentq(
@@ -916,9 +928,11 @@ def tunnelFromPhase(phases, start_phase, V, dV, Tmax, makePlot=False,
                     args=args, xtol=Ttol, maxiter=maxiter, disp=False)
             else:
                 # no tunneling possible
+		print ('S(Tmin) / Tmax > 140. No tunneling possible.')
                 return None
         else:
             # tunneling happens right away at Tmax
+	    print ('S(Tmax) / Tmax > 140. Tunneling happens right away at Tmax.')
             Tnuc = Tmax
     rdict = outdict[Tnuc]
     return rdict if rdict['trantype'] > 0 else None
@@ -1149,60 +1163,46 @@ def makePlots(tobj, V_, xmin=-300, xmax=300, ymin=-400, ymax=400, n=50, clevs=50
     ax.set_ylabel('$|\phi(r)-\phi_{absMin}|$')
     plt.show()
 
-def plotNuclCriterion(phases, V, dV, Tc, vev_mag, makePlot=False,
+def plotNuclCriterion(phases, OUT_PATH, index, V, dV, makePlot=False,
                     phitol=1e-8, overlapAngle=45.0,
                     nuclCriterion=lambda S,T: S/(T+1e-100) - 140.0,
                     verbose=True,
                     fullTunneling_params={}):
     import matplotlib.pyplot as plt
     phases = phases.copy()
-    if len(phases) < 3:
-        return
-    else:
-        # Already know there is first-order transition at low-T, delete high-T phase and re-find start phase
-        # TODO: Make this less artificial
-        start_phase = phases[getStartPhase(phases, V)]
-        del phases[start_phase.key]
-        start_phase = phases[getStartPhase(phases, V)]
-        del phases[start_phase.key]
-        Tmax = start_phase.T[-1]
-        outdict = {}
-        #args = (phases, start_phase, V, dV,
-        #        phitol, overlapAngle, nuclCriterion,
-        #        fullTunneling_params, verbose, outdict, makePlot)
+    # Already know there is first-order transition at low-T, delete high-T phase and re-find start phase
+    # TODO: Make this less artificial
+    start_phase = phases[getStartPhase(phases, V)]
+    while len(phases) > 1:
+	Tmin = start_phase.T[0]
+	Tmax = start_phase.T[-1]
+	del phases[start_phase.key]
+    	T = np.linspace(Tmin, Tmax, 100)
+    	T_plot = []
+    	nucl = []
+	outdict = {}
+    	for t in T:
+    	    try:
+    	        badTunneling = []
+		makePlot = False
+    	        n =  _tunnelFromPhaseAtT(t, phases, start_phase, V, dV,
+    	                    phitol, overlapAngle, nuclCriterion,
+    	                    fullTunneling_params, verbose, outdict, makePlot)
+    	        if n is np.inf or n > 1e5:
+    	            continue
+    	        else:
+    	            T_plot.append(t)
+    	            nucl.append(n)
+    	    except:
+    	        continue
 
-        Tmin = start_phase.T[0]
-        T_highest_other = Tmin
-        for phase in phases.values():
-            T_highest_other = max(T_highest_other, phase.T[-1])
-        Tmax = min(Tmax, T_highest_other)
-        assert Tmax >= Tmin
-
-        T = np.linspace(Tmin, Tmax, 100)
-        T_plot = []
-        nucl = []
-        for t in T:
-            try:
-                badTunneling = []
-                n =  _tunnelFromPhaseAtT(t, phases, start_phase, V, dV,
-                            phitol, overlapAngle, nuclCriterion,
-                            fullTunneling_params, verbose, outdict, makePlot)
-                #print (n)
-                if n is np.inf or n > 1e5:
-                    continue
-                else:
-                    T_plot.append(t)
-                    nucl.append(n)
-            except:
-                continue
-        #plt.figure()
+    	plt.figure()
         plt.plot(T_plot,nucl)
-        tran_s = vev_mag/Tc
         if len(nucl) >0:
-            plt.text(max(T_plot)*0.6, max(nucl)*0.7, r'v/Tc = %0.4g' % tran_s)
             if abs(min(nucl)) < 1e3:
                 plt.plot(T_plot,np.zeros(len(T_plot)),'--')
         plt.xlabel('T')
         plt.ylabel('S/T-140')
-        #plt.show()
-
+        plt.savefig('%s/S_T_sp%s_%s.pdf' % (OUT_PATH, start_phase.key, index))
+	plt.clf()
+	start_phase = phases[getStartPhase(phases, V)]
