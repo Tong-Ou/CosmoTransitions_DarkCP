@@ -31,36 +31,18 @@ import deepdish as dd
 
 t0 = time.clock()
 
-rank = int(sys.argv[1]) #task_id
+ntasks = int(sys.argv[1])
+FILE = sys.argv[2]
+OUT_PATH = sys.argv[3]
 
-numtasks = int(sys.argv[2])
-
-FILE = sys.argv[3]
-OUT_PATH = sys.argv[4]
-
-#if not os.path.isdir(OUT_PATH):
- #   os.makedirs(OUT_PATH)
+if not os.path.isdir(OUT_PATH):
+    os.makedirs(OUT_PATH)
 
 filename = '%s.npy' % FILE
-paras = None
-if os.path.exists(filename):
-    paras = np.load(filename, allow_pickle = True)
-else:
-    ncpu = numtasks
-    para_list = []
-    for i in range(ncpu):
-        filename = '%s_%s.npy' % (FILE, i)
-        if os.path.exists(filename):
-            para = np.load(filename, allow_pickle = True)
-            para_list.append(para)
-        else:
-            continue
-    paras = np.concatenate(para_list,axis = 0)
-    np.save('%s.npy' % FILE, paras)
-vphys = np.load(FILE + '_vphy.npy', allow_pickle = True)
-lmins = np.load(FILE + '_localMin.npy', allow_pickle = True)
-#fig = plt.figure()
+paras = np.load(filename, allow_pickle = True)
 
+#fig = plt.figure()
+'''
 scan_task = range(len(paras))
 #scan_task = [40, 1, 63, 44, 25, 47, 57, 17]
 rank_task = scan_task[rank:len(scan_task):numtasks]
@@ -68,8 +50,9 @@ logfile = '%s/pt_%s.log' % (OUT_PATH, rank)
 log = open(logfile, 'w')
 sys.stdout = log
 phase_dict = {}
-
-#rank_task = [162, 462]
+'''
+#rank_task = [210, 19, 468, 148, 336, 276, 127, 287]
+rank_task = [8]
 for index in rank_task:
 
     para = paras[index]
@@ -79,10 +62,13 @@ for index in rank_task:
     mt = bmt.model(para[0],para[1],para[2],para[3],para[4],para[5],para[6],para[7],para[8],para[9])
     #print (mt.Vtot([100.,100.,100.], T=0.))
     
-    vphy = vphys[index]
-    zeroTLocalMin = np.array([[246., 0., 0.], [0., 0., abs(mt.vs2+2.*mt.ks2/mt.ls)**0.5], [1e-5, 1e-5, 1e-5]])
-    #zeroTLocalMin = lmins[index]
-    
+    vphy = para[10]
+    zeroTLocalMin = para[12]
+
+    findex = index % ntasks
+    phases = dd.io.load('%s/phases_%s.h5' % (OUT_PATH, findex))[index]
+
+    '''    
     print("\n")
     print("\n")
     
@@ -151,20 +137,19 @@ for index in rank_task:
     except:
         print ('Skipping due to unexpected error...')
         continue
-
-    mt.dSdT() # Compute dS/dT at Tnuc (for calculation of GW)
+    
     print("\n \n All the tunnelings/phase transitions of such a model are")
-    mt.prettyPrintTnTrans()
-    
-    
+
+    ses, V, dV, makePlot=False,                                                                                                       phitol=1e-8, overlapAngle=45.0,                                                                                                        nuclCriterion=lambda S,T: S/(T+1e-100) - 140.0,                                                                                        verbose=True, OUT_PATH='.', index=0,                                                                                                   fullTunneling_params={})mt.prettyPrintTnTrans()
     '''
-    mt.plotNuclCriterion()
-    plt.savefig('%s/S_T_%s.png' % (OUT_PATH, index))
-    plt.clf()
-    '''
+
+    mt.plotNuclCriterion(phases, OUT_PATH, index)
+    #plt.savefig('%s/S_T_%s.png' % (OUT_PATH, index))
+    #plt.clf()
+    
 
 # Save phases
-dd.io.save('%s/phases_%s.h5' % (OUT_PATH, rank), phase_dict)
+#dd.io.save('%s/phases_%s.h5' % (OUT_PATH, rank), phase_dict)
 
 t1 = time.clock()
 print ('Run time: %s' % (t1-t0))

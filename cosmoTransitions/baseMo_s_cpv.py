@@ -73,7 +73,7 @@ class model(generic_potential.generic_potential):
         self.nx = 3
         
         self.nt = 12
-        self.nd = 12
+        self.nd = 4
 
 
     def test(self):
@@ -102,7 +102,7 @@ class model(generic_potential.generic_potential):
        
 
         ringh = (3.*self.Y1**2./16. + self.Y2**2./16. + self.lh/2 + self.Yt**2./4. + self.lsh/12.)*T**2.*phi1**0.
-        rings = (self.ls/3. + self.lsh/6. + self.yd**2/48.)*T**2.*phi2**0.
+        rings = (self.ls/3. + self.lsh/6. + self.yd**2/12.)*T**2.*phi2**0.
         ringA = rings
         ringwl = 11.*self.Y1**2.*T**2.*phi1**0./6.
         ringbl = 11.*self.Y2**2.*T**2.*phi1**0./6.

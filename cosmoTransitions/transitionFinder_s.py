@@ -1174,8 +1174,8 @@ def plotNuclCriterion(phases, OUT_PATH, index, V, dV, makePlot=False,
     # TODO: Make this less artificial
     start_phase = phases[getStartPhase(phases, V)]
     while len(phases) > 1:
-	Tmin = start_phase.T[0]
-	Tmax = start_phase.T[-1]
+	Tmin = 100. #start_phase.T[0]
+	Tmax = 120. #start_phase.T[-1]
 	del phases[start_phase.key]
     	T = np.linspace(Tmin, Tmax, 100)
     	T_plot = []
@@ -1205,4 +1205,66 @@ def plotNuclCriterion(phases, OUT_PATH, index, V, dV, makePlot=False,
         plt.ylabel('S/T-140')
         plt.savefig('%s/S_T_sp%s_%s.pdf' % (OUT_PATH, start_phase.key, index))
 	plt.clf()
-	start_phase = phases[getStartPhase(phases, V)]
+
+def dSdT(V, dV, xlow, xhigh, Tnuc, phitol=1e-8, fullTunneling_params={}):
+    T_eps = 0.001 # Try reducing resolution because the precision for action calculation is limited.
+    deriv_order = 2
+    if deriv_order == 2:
+	Tm = Tnuc - T_eps
+	Tp = Tnuc + T_eps
+	def Vm_(x,T=Tm,V=V): return V(x,Tm)
+	def dVm_(x, T=Tm, V=V): return dV(x, Tm)
+	xmlow = optimize.fmin(Vm_, xlow, xtol=phitol, ftol=np.inf, disp=False)
+	xmhigh = optimize.fmin(Vm_, xhigh, xtol=phitol, ftol=np.inf, disp=False)
+	sm = pathDeformation.fullTunneling(
+             [xmlow,xmhigh], Vm_, dVm_, callback_data=Tm,
+             **fullTunneling_params).action / (Tm+1e-100)
+	def Vp_(x,T=Tp,V=V): return V(x,Tp)
+	def dVp_(x,T=Tp, V=V): return dV(x, Tp)
+	xplow = optimize.fmin(Vp_, xlow, xtol=phitol, ftol=np.inf, disp=False)
+	xphigh = optimize.fmin(Vp_, xhigh, xtol=phitol, ftol=np.inf, disp=False)
+	sp = pathDeformation.fullTunneling(
+             [xplow,xphigh], Vp_, dVp_, callback_data=Tp,
+             **fullTunneling_params).action / (Tp+1e-100)
+	dSdT = (sp-sm)/(2*T_eps)
+    else:
+	Tm1 = Tnuc - T_eps
+	Tm2 = Tnuc - T_eps*2
+	Tp1 = Tnuc + T_eps
+	Tp2 = Tnuc + T_eps*2
+	def Vm1_(x, T=Tm1, V=V): return V(x,Tm1)
+	def Vm2_(x, T=Tm2, V=V): return V(x,Tm2)
+	def Vp1_(x, T=Tp1, V=V): return V(x,Tp1)
+	def Vp2_(x, T=Tp2, V=V): return V(x,Tp2)
+
+        def dVm1_(x, T=Tm1, V=V): return dV(x,Tm1)
+        def dVm2_(x, T=Tm2, V=V): return dV(x,Tm2)
+        def dVp1_(x, T=Tp1, V=V): return dV(x,Tp1)
+        def dVp2_(x, T=Tp2, V=V): return dV(x,Tp2)
+
+	xm1low = optimize.fmin(Vm1_, xlow, xtol=phitol, ftol=np.inf, disp=False)
+	xm2low = optimize.fmin(Vm2_, xlow, xtol=phitol, ftol=np.inf, disp=False)
+	xp1low = optimize.fmin(Vp1_, xlow, xtol=phitol, ftol=np.inf, disp=False)
+	xp2low = optimize.fmin(Vp2_, xlow, xtol=phitol, ftol=np.inf, disp=False)
+	xm1high = optimize.fmin(Vm1_, xhigh, xtol=phitol, ftol=np.inf, disp=False)
+	xm2high = optimize.fmin(Vm2_, xhigh, xtol=phitol, ftol=np.inf, disp=False)
+	xp1high = optimize.fmin(Vp1_, xhigh, xtol=phitol, ftol=np.inf, disp=False)
+	xp2high = optimize.fmin(Vp2_, xhigh, xtol=phitol, ftol=np.inf, disp=False)
+
+	try:
+	    s1 = pathDeformation.fullTunneling(
+             [xm2low,xm2high], Vm2_, dVm2_, callback_data=Tm2,
+             **fullTunneling_params).action / (Tm2+1e-100)
+	    s2 = pathDeformation.fullTunneling(
+             [xm1low,xm1high], Vm1_, dVm1_, callback_data=Tm1,
+             **fullTunneling_params).action / (Tm1+1e-100)
+	    s3 = pathDeformation.fullTunneling(
+             [xp1low,xp1high], Vp1_, dVp1_, callback_data=Tp1,
+             **fullTunneling_params).action / (Tp1+1e-100)
+	    s4 = pathDeformation.fullTunneling(
+             [xp2low,xp2high], Vp2_, dVp2_, callback_data=Tp2,
+             **fullTunneling_params).action / (Tp2+1e-100)
+	    dSdT = (s1-s2+s3-s4)/(12*T_eps)
+	except:
+	    dSdT = 1e100
+    return dSdT

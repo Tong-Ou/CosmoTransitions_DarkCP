@@ -1,6 +1,5 @@
 build
 Implementations/outputs/*
-Implementations/test/*
 *.out
 *.err
 *log

@@ -53,20 +53,22 @@ t0 = time.clock()
 lh = 0.129
 vh = 246.
 
-lsr = [0., 4.]
+lsr = [1e-5, 0.03] #[0.001, 4.]
 
-lshr = [0., 4.*np.pi]
+lshr = [1e-4, 0.015] #[1e-4, 0.03] #[0.01, 1.]
 
-ks2r = [0.1, 6000.]
+mar = [1., 500.]
+
+ks2r = [1e3, 1e5] #[1e3, 1e5]
 
 #ydr = [1e-2, 10.]
-ydr = [1e-2, 4.]
-thetaYr = [0., 2*np.pi]
+ydr = [1e-2, 0.25]
+thetaYr = [0., np.pi/2.]
 
-m0r = [1e-3, 500.]
+m0r = [10., 1000.]
 #m0r = [1e-3, 100.]
 
-vsr = [100., 500.]
+vsr = [0.1, 50.]
 
 npt = int(sys.argv[4])
 
@@ -79,28 +81,30 @@ def ls_max(lh, vh2, vs2, ks2):
     else:
 	return lh*vh2**2/(2.*vs2**2)
 
+def ls_min(lh, vh2, ma2, lsh):
+    return (-2*ma2+lsh*vh2)**2./(4*lh*vh2**2)
+
 def physpara(m):
     print ('\n')
     print ('ls:%s lsh:%s vs2:%s ks2:%s m0:%s yd:%s thetaYd:%s ' % (m.ls, m.lsh, m.vs2, m.ks2, m.m0, m.yd, m.thetaY))
     print ('non-tachyonic: %s' % bool((0.5*m.lsh*m.vh2 - 2*m.ks2)/m.vs2-m.ls>0.))
     print ('condition 2-a: %s' % all(((m.lh*m.vh2**2-4.*m.ks2*m.vs2+np.sqrt(m.lh**2*m.vh2**4-8.*m.lh*m.vh2**2*m.ks2*m.vs2))/(2.*m.vs2**2)-m.ls>0., (m.lh*m.vh2**2-4.*m.ks2*m.vs2-np.sqrt(m.lh**2*m.vh2**4-8.*m.lh*m.vh2**2*m.ks2*m.vs2))/(2.*m.vs2**2)-m.ls<0. )))
 
-    '''
-    gradV_exp = m.gradV([246.,0.,0.], T=0.)
-    d2V_exp = m.d2V([246.,0.,0.], T=0.)
-    m2sq_exp, eig_exp = np.linalg.eig(d2V_exp)
-    print ('\n')
-    print ('First derivative at expected Higgs minimum: %s' % gradV_exp)
-    print ('Mass eigenvalues at expected Higgs minimum: %s' % m2sq_exp)
-    if any((m2sq_exp[0]<0, m2sq_exp[1]<0, m2sq_exp[2]<0)):
-        print ('Expected Higgs vev is a saddle point, exiting...')
-        return None
-    '''
     vp = m.findMinimum(T=0.)
     print ('Higgs minimum: [%s, %s, %s]' % (vp[0],vp[1],vp[2]))
     if vp[0] > 248. or vp[0] < 244.:
-        print ('Not at the expected Higgs vev, exiting...')
-        return 1
+        d2V_exp = m.d2V([246.,0.,0.], T=0.)
+        m2sq_exp, eig_exp = np.linalg.eig(d2V_exp)
+        print ('\n')
+        #print ('First derivative at expected Higgs minimum: %s' % gradV_exp)
+        print ('Mass eigenvalues at expected Higgs minimum: %s' % m2sq_exp)
+	# Note that the eigenvalues returned by np.linalg.eig might not be sorted in a particular order!!!
+        if any((m2sq_exp[0]<0, m2sq_exp[1]<0, m2sq_exp[2]<0)):
+            print ('Expected Higgs vev is a saddle point, exitting...')
+            return 1
+	else:
+            print ('Local minimum %s is deeper than expected Higgs minimum, exitting...' % vp)
+            return 3
     else:
         m2phys = m.d2V(vp, T=0.)
         #mh2 = -m.lh*m.vh2+3.*m.lh*vp[0]**2.+0.5*m.lsh*(vp[1]**2.+vp[2]**2.)
@@ -124,8 +128,8 @@ def physpara(m):
         else:
             print('Search for other local minima and check whether this is global minimum...')
             vh = 246.
-            vs = (m.vs2+2.*m.ks2/m.ls)**0.5
-            vscan = [0.1, vh, vs, 1e5]
+            vs = abs((m.vs2+2.*m.ks2/m.ls))**0.5
+            vscan = [0.1, vh, vs, 1e4]
             minX = []
             for v1 in vscan:
                 for v2 in vscan:
@@ -160,106 +164,15 @@ def physpara(m):
             return [vp, m1phy, minX]
         
         
-def trans(i, m):
-
-    print "\n check point %s \n" %[i, m.lh, m.ls, m.lsh, m.ks2, m.vh2, m.vs2] 
-    
-    m.calcTcTrans() 
-
-    trans = m.TcTrans
-
-    sfo = False
-
-    fo = False
-    
-    check = False
-
-    foph = []
-    
-    sfoph = []
-    
-    for k in range(len(trans)):
-        tc = trans[k]['Tcrit']
-        sh = abs(trans[k]['low_vev'][0]-trans[k]['high_vev'][0])/tc
-        if trans[k]['trantype'] ==1:
-            foph.append(sh)
-            fo = True
-            if sh >= 1.: 
-                sfoph.append([tc, sh])
-                sfo = True
-               
-    for key in m.phases:
-        if m.phases[key].check:               
-            check = True
-    
-    #return trans, sfoph, check
-    return fo, foph, sfo, sfoph
-
-'''
-def t0vev(m):
-    
-    wvev = m.Vtot(m.findMinimum(T=0.),T=0.) - m.Vtot(m.findMinimum(X=[0.,0.],T=0.),T=0.) > 1.
-    
-    return wvev
-
-
-def thvev(m):
-    
-    htX =  m.findMinimum(T=1000.)
-    
-    wvev = (abs(htX[...,0]) > 10.**10.) or (abs(htX[...,1]) > 10.**10.)
-    
-    return wvev
-
-
-def getscani(i, m):
-    
-    
-    if any([m.lh > 4.*np.pi/3., m.ls > 4.*np.pi/3., m.lsh > 16.*np.pi/3.]): 
-           
-        print('wrong paras')
-        
-        scani = None
-        
-        
-    else: 
-                    
-        scani = []
-                         
-        scani.append([m.lh, m.ls, m.lsh, m.vh2, m.vs2])
-        
-        scani.append(physpara(m))
-            
-        if t0vev(m) or thvev(m):
-            
-            scani.append([])
-            
-            scani.append([])
-            
-            scani.append(True)
-                
-        else:
-
-            transit, sfoph, check = trans(i, m)
-            
-            scani.append([sfoph])
-            
-            scani.append([transit])
-            
-            scani.append(check)
-         
-    return scani
-                
- '''                                                 
-
-def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
+def getscan(l2box, lmbox, mabox, ks2box, ydbox, thetaYbox, m0box, npt):
  
    # l1min,l1max = l1box
     l2min, l2max = l2box
     lmmin, lmmax = lmbox
+    mamin, mamax = mabox
     ks2min, ks2max = ks2box
     #m12min, m12max = m12box
-    vsmin, vsmax = vsbox
+    #vsmin, vsmax = vsbox
     ydmin, ydmax = ydbox
     thetaYmin, thetaYmax = thetaYbox
     m0min, m0max = m0box
@@ -272,31 +185,15 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
 
     #size = comm.Get_size()
         
-    scan_rank = []
+    scan_rank, vphy_list, lmin_list = [], [], []
                 
     ran.seed(time.time())
     #plt.figure(figsize=(12,5))
 
-    ls_novh = []
-    lsh_novh = []
-    yd_novh = []
-    thetaY_novh = []
-    m0_novh = []
-    ls_nomh = []
-    lsh_nomh = []
-    yd_nomh = []
-    thetaY_nomh = []
-    m0_nomh = []
-    ls_vs = []
-    lsh_vs = []
-    yd_vs = []
-    thetaY_vs = []
-    m0_vs = []
-    ls_vh = []
-    lsh_vh = []
-    yd_vh = []
-    thetaY_vh = []
-    m0_vh = []
+    ls_novh, lsh_novh, vs2_novh, ks2_novh, yd_novh, thetaY_novh, m0_novh = [], [], [], [], [], [], []
+    ls_nomh, lsh_nomh, vs2_nomh, ks2_nomh, yd_nomh, thetaY_nomh, m0_nomh = [], [], [], [], [], [], []
+    ls_vs, lsh_vs, vs2_vs, ks2_vs, yd_vs, thetaY_vs, m0_vs = [], [], [], [], [], [], []
+    ls_vh, lsh_vh, vs2_vh, ks2_vh, yd_vh, thetaY_vh, m0_vh = [], [], [], [], [], [], []
 
     logfile = '%s/%s_%s.log' % (BASE_PATH, FILE, rank)
     log = open(logfile, 'w')
@@ -315,26 +212,51 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
         # Why not create a np.linspace and scan one by one? - Not realistic for 5 parameters
         #l1 = ran.uniform(l1min,l1max)
         l1 = lh
+	vh2 = vh**2.
         #l2 = ran.uniform(l2min,l2max)
-        #l2 = ran.uniform(0, 5.)
-        lm = ran.uniform(lmmin,lmmax)
+        #lm = np.exp(ran.uniform(np.log(lmmin), np.log(lmmax)))
+	ma = 150.#ran.uniform(mamin, mamax)
+	vsp = ran.uniform(10., 700.)
+	ma2 = ma**2.
+	lshmin = 1e-4#2*ma2/vh2
+	#lshmax = 2*l1*vh2/vsp**2 + 5e-3
+	#lshmin = max(2*ma2/vh2, 2*l1*vh2/vsp**2)
+	lshmax = 8.#2*(l1*vh2/vsp**2 + ma2/vh2)*1.01
+	if lshmin < lshmax:
+	    lm = ran.uniform(lshmin, lshmax)
+	    #lm = np.exp(ran.uniform(np.log(lshmin), np.log(lshmax))) #ran.uniform(2*ma2/vh2, lmmax)
+	else:
+	    continue
+	#ran.uniform(mamin, mamax)
         #ks2 = ran.uniform(ks2min, ks2max)
-        ks2 = 3000.
-        #m1log = ran.uniform(m1min,m1max)
-        #vslog = ran.uniform(vsmin,vsmax)
-        vslog = 100.
-        #m2log = ran.uniform(200, 250)
-        #yd = ran.uniform(ydmin, ydmax)
-	yd = 0.5
+        ks2 = np.exp(ran.uniform(np.log(ks2min), np.log(ks2max)))
         thetaY = ran.uniform(thetaYmin, thetaYmax)
-        #m0 = ran.uniform(m0min, m0max)
-	m0 = 100.
+        m0 = 80.#ran.uniform(m0min, m0max)
+	#m0 = 150.
+	#ydmin = min(0.001, (m0/2e3)**0.5)
+	yd = 0.25#ran.uniform((m0/2e3)**0.5, (m0/0.5e3)**0.5)
 
-        vh2 = vh**2
-        vs2 = vslog**2
-
-	lsmax = ls_max(l1, vh2, vs2, ks2)
-	l2 = ran.uniform(l2min, 2.*lsmax)
+	l2 = (0.5*lm*vh2 - ma2)/(vsp**2)
+	vs2 = vsp**2 - 2*ks2/l2
+        
+	'''
+	lsmin = (lm*vh2 - 2*ma2)**2./(4*l1*vh2**2.)
+	if lsmin > l2max:
+	    n = n-1
+	    continue
+	
+	if ls_min(l1, vh2, ma2, lm) < 0.02*lm:
+	    l2 = np.exp(ran.uniform(np.log(ls_min(l1, vh2, ma2, lm)*10**4), np.log(0.02*lm*10**4)))/(10**4)
+	else:
+	    l2 = ls_min(l1, vh2, ma2, lm)
+	'''
+	#l2 = lm*np.exp(ran.uniform(np.log(5e-3), np.log(0.1))) #ran.uniform(l2min, lm)*0.05
+	#vs2 = (0.5*lm*vh2 - 2*ks2 - ma2)/l2
+	#lsmax = min(4*np.pi/1.5, ls_max(l1, vh2, vs2, ks2))
+	#l2 = ran.uniform(l2min, 1.5*lsmax)
+	#l2 = np.exp(ran.uniform(np.log(l2min), np.log(l2max)))
+	#l2 = ran.uniform(l2min, l2max)
+	#ks2 = 0.5*(-l2*vs2 + 0.5*lm*vh2 - ma2)
                  
         v2re = 172.9**2.
     
@@ -361,18 +283,24 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
         if type(phy) is not list and phy == 1:
             ls_novh.append(l2)
             lsh_novh.append(lm)
+	    vs2_novh.append(vs2)
+	    ks2_novh.append(ks2)
             yd_novh.append(yd)
 	    thetaY_novh.append(thetaY)
             m0_novh.append(m0)
         elif type(phy) is not list and phy == 2:
             ls_nomh.append(l2)
             lsh_nomh.append(lm)
+	    vs2_nomh.append(vs2)
+	    ks2_nomh.append(ks2)
             yd_nomh.append(yd)
 	    thetaY_nomh.append(thetaY)
             m0_nomh.append(m0)
         elif type(phy) is not list and phy == 3:
             ls_vs.append(l2)
             lsh_vs.append(lm)
+	    vs2_vs.append(vs2)
+	    ks2_vs.append(ks2)
             yd_vs.append(yd)
 	    thetaY_vs.append(thetaY)
             m0_vs.append(m0)
@@ -381,15 +309,25 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
             vphy, m1phy, localMin = phy[0], phy[1], phy[2]
             ls_vh.append(l2)
             lsh_vh.append(lm)
+	    vs2_vh.append(vs2)
+	    ks2_vh.append(ks2)
             yd_vh.append(yd)
 	    thetaY_vh.append(thetaY)
             m0_vh.append(m0)
-            scan_rank.append([vh2, vs2, l1, l2, lm, ks2, yd, thetaY, m0, v2re, vphy, m1phy, localMin])
+            scan_rank.append([vh2, vs2, l1, l2, lm, ks2, yd, thetaY, m0, v2re, m1phy])
+	    vphy_list.append(vphy)
+	    lmin_list.append(localMin)
             filename = '%s_%s' % (FILE, rank)
-            np.save(os.path.join(BASE_PATH, filename), scan_rank)
+	    vphy_file = filename + '_vphy'
+	    lmin_file = filename + '_localMin'
+            np.save(os.path.join(BASE_PATH, filename), scan_rank, allow_pickle=True)
+	    np.save(os.path.join(BASE_PATH, vphy_file), vphy_list, allow_pickle=True)
+	    np.save(os.path.join(BASE_PATH, lmin_file), lmin_list, allow_pickle=True)
 
         para_dict = { 'ls_novh':ls_novh, 'lsh_novh':lsh_novh, 'ls_nomh':ls_nomh, 'lsh_nomh':lsh_nomh,
                         'ls_vs':ls_vs, 'lsh_vs':lsh_vs, 'ls_vh':ls_vh, 'lsh_vh':lsh_vh,
+			'vs2_novh':vs2_novh, 'ks2_novh':ks2_novh, 'vs2_nomh':vs2_nomh, 'ks2_nomh':ks2_nomh,
+			'vs2_vs':vs2_vs, 'ks2_vs':ks2_vs, 'vs2_vh':vs2_vh, 'ks2_vh':ks2_vh,
                         'yd_novh':yd_novh, 'thetaY_novh':thetaY_novh, 'm0_novh':m0_novh, 
 			'yd_nomh':yd_nomh, 'thetaY_nomh':thetaY_nomh, 'm0_nomh':m0_nomh,
                         'yd_vs':yd_vs, 'thetaY_vs':thetaY_vs, 'm0_vs':m0_vs,
@@ -398,7 +336,7 @@ def getscan(l2box, lmbox, ks2box, vsbox, ydbox, thetaYbox, m0box, npt):
         dd.io.save(filename, para_dict)
 
 if __name__ == "__main__":   
-    scan = getscan(lsr, lshr, ks2r, vsr, ydr, thetaYr, m0r, npt)
+    getscan(lsr, lshr, mar, ks2r, ydr, thetaYr, m0r, npt)
     tf = time.clock()
     dt = tf-t0
     print ('Run time: %s' % dt)

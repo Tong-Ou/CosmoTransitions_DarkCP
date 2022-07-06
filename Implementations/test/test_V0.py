@@ -15,38 +15,29 @@ import matplotlib.pyplot as plt
 import sys
 
 import os
-import time
 
 #import baseMo_s_t as bmt
 import baseMo_s_cpv as bmt
 
 import numpy as np
-import deepdish as dd
 
 #import mpi4py.MPI as mpi
 
 #comm = mpi.COMM_WORLD
 #rank = comm.Get_rank()
 #size = comm.Get_size()
+'''
+FILE = sys.argv[1]
 
-t0 = time.clock()
-
-rank = int(sys.argv[1]) #task_id
-
-numtasks = int(sys.argv[2])
-
-FILE = sys.argv[3]
-OUT_PATH = sys.argv[4]
-
-#if not os.path.isdir(OUT_PATH):
- #   os.makedirs(OUT_PATH)
+if not os.path.isdir(OUT_PATH):
+    os.mkdir(OUT_PATH)
 
 filename = '%s.npy' % FILE
 paras = None
 if os.path.exists(filename):
     paras = np.load(filename, allow_pickle = True)
 else:
-    ncpu = numtasks
+    ncpu = 100
     para_list = []
     for i in range(ncpu):
         filename = '%s_%s.npy' % (FILE, i)
@@ -57,31 +48,51 @@ else:
             continue
     paras = np.concatenate(para_list,axis = 0)
     np.save('%s.npy' % FILE, paras)
-vphys = np.load(FILE + '_vphy.npy', allow_pickle = True)
-lmins = np.load(FILE + '_localMin.npy', allow_pickle = True)
+'''
 #fig = plt.figure()
-
+'''
 scan_task = range(len(paras))
-#scan_task = [40, 1, 63, 44, 25, 47, 57, 17]
-rank_task = scan_task[rank:len(scan_task):numtasks]
+rank_task = scan_task[rank:len(paras):numtasks]
 logfile = '%s/pt_%s.log' % (OUT_PATH, rank)
 log = open(logfile, 'w')
 sys.stdout = log
-phase_dict = {}
+'''
+for index in range(1):
 
-#rank_task = [162, 462]
-for index in rank_task:
-
-    para = paras[index]
+    para = [60516, 100.**2, 0.129, 1.3343720573, 9.8347897898, 3000.0, 2.0, 4.6058404343, 100., 600.**2]
     print('The parameters are:')
     print( 'Index: %s vh2:%s vs2:%s lh:%s ls:%s lsh:%s ks2:%s yd:%s thetaY:%s m0:%s v2re:%s' % (index, para[0],para[1],para[2],para[3],para[4],para[5],para[6],para[7],para[8],para[9]))
     
     mt = bmt.model(para[0],para[1],para[2],para[3],para[4],para[5],para[6],para[7],para[8],para[9])
-    #print (mt.Vtot([100.,100.,100.], T=0.))
-    
-    vphy = vphys[index]
-    zeroTLocalMin = np.array([[246., 0., 0.], [0., 0., abs(mt.vs2+2.*mt.ks2/mt.ls)**0.5], [1e-5, 1e-5, 1e-5]])
-    #zeroTLocalMin = lmins[index]
+    print ('Vtot(vh):')
+    print (mt.Vtot([246.0000260616804, -1.1415885184493248e-05, -2.246559391093995e-05], T=0.))
+    print ('V0(vh):')
+    print (mt.V0([246.0000260616804, -1.1415885184493248e-05, -2.246559391093995e-05]))
+    print ('VCW(vh):')
+    print (mt.V1([246.0000260616804, -1.1415885184493248e-05, -2.246559391093995e-05], T=0.))
+    print ('Counterterm(vh):')
+    print (mt.counterterm([246.0000260616804, -1.1415885184493248e-05, -2.246559391093995e-05]))
+
+    print ('\n')
+    lmin = [0, 0, 0]
+    print ('Vtot(%s):' % lmin)
+    print (mt.Vtot(lmin, T=0.))
+    print ('V0(%s):' % lmin)
+    print (mt.V0(lmin))
+    print ('VCW(%s):' % lmin)
+    print (mt.V1(lmin, T=0.))
+    print ('Counterterm(%s):' % lmin)
+    print (mt.counterterm(lmin))
+
+    '''
+    print ('Boson masses:')
+    print (mt.boson_massSq([100.,100.,100.], T=0.))
+    print ('Fermion masses:')
+    print (mt.fermion_massSq([100.,100.,100.]))
+    '''
+    '''
+    vphy = para[10]
+    zeroTLocalMin = para[12]
     
     print("\n")
     print("\n")
@@ -96,9 +107,6 @@ for index in rank_task:
     print("\n")
      
     print("Now let's find the phase transitions:")
-
-    phases = mt.getPhases(vphy, zeroTLocalMin)
-    phase_dict.update({index:phases})
     
     mt.calcTcTrans(vphy, zeroTLocalMin)
     
@@ -151,20 +159,14 @@ for index in rank_task:
     except:
         print ('Skipping due to unexpected error...')
         continue
-
-    mt.dSdT() # Compute dS/dT at Tnuc (for calculation of GW)
+    
     print("\n \n All the tunnelings/phase transitions of such a model are")
+
     mt.prettyPrintTnTrans()
     
     
-    '''
+    
     mt.plotNuclCriterion()
     plt.savefig('%s/S_T_%s.png' % (OUT_PATH, index))
     plt.clf()
-    '''
-
-# Save phases
-dd.io.save('%s/phases_%s.h5' % (OUT_PATH, rank), phase_dict)
-
-t1 = time.clock()
-print ('Run time: %s' % (t1-t0))
+   '''

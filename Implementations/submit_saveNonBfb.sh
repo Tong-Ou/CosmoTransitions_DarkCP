@@ -1,11 +1,12 @@
 #!/bin/sh
 
-#SBATCH --time=4:00:00
-#SBATCH --job-name=scanbm
-#SBATCH --partition=cpu_gce_test
-#SBATCH --ntasks=80
-#SBATCH --qos=test
-#SBATCH --error="slurm_scan.err"
+#SBATCH --time=10:00:00
+#SBATCH --job-name=saveNonBfb
+#SBATCH --partition=cpu_gce
+#SBATCH --ntasks=30
+#SBATCH --qos=regular
+#SBATCH -a 0-29
+#SBATCH --error="slurm_savenonbfb.err"
 
 #This script is adapted from the example from https://rcc.uchicago.edu/docs/tutorials/kicp-tutorials/running-jobs.html.
 #module load parallel
@@ -27,12 +28,6 @@ srun="srun --exclusive -N1 -n1"
 # parallel uses ::: to separate options. Here {0..99} is a shell expansion
 # so parallel will run the command passing the numbers 0 through 99
 # via argument {1}
-FILE="outputs/full_potential_cpv/wrap_up/ma150-2"
-NPT=10000
+FILE="outputs/full_potential_cpv/ks210_vs100/scan_r12"
 #$parallel "$srun python ran_scan_cpv_nompi.py {1} $SLURM_NTASKS $FILE $NPT" ::: {0..99}
-for i in {0..79}
-do
-        $srun python ran_scan_cpv_parallel.py $i $SLURM_NTASKS $FILE $NPT&
-done
-wait
-#$srun python ran_scan_cpv_parallel.py $SLURM_ARRAY_TASK_ID $SLURM_NTASKS $FILE $NPT
+$srun python test/saveNonBfb.py $SLURM_ARRAY_TASK_ID $SLURM_NTASKS $FILE

@@ -291,11 +291,14 @@ class generic_potential():
         #vphy = np.asanyarray(vphy, dtype=float)
         delta_lh = (self.gradVCW(vphy, T=0.)[0] - vphy[0]*self.d2VCW(vphy, T=0.)[0][0])/(2*vphy[0]**3)
         delta_muh = (3*self.gradVCW(vphy, T=0.)[0] - vphy[0]*self.d2VCW(vphy, T=0.)[0][0])/(2*vphy[0])
+	# These 2 terms are added to fix ma and ms at tree-level values.
+	delta_mus = self.d2VCW(vphy, T=0.)[1][1];
+	delta_mua = self.d2VCW(vphy, T=0.)[2][2];
         #re_rho = self.nd*self.m0**3*self.yd*np.cos(self.thetaY)*(np.log(self.m0**2/self.renormScaleSq)-1)/(32*np.pi**2)
         #im_rho = self.nd*self.m0**3*self.yd*np.sin(self.thetaY)*(np.log(self.m0**2/self.renormScaleSq)-1)/(32*np.pi**2)
         re_rho = -self.gradVCW(vphy, T=0.)[1]
         im_rho = self.gradVCW(vphy, T=0.)[2]
-        return -0.5*delta_muh*phi1**2 + 0.25*delta_lh*phi1**4 + (re_rho*phi2 - im_rho*phi3)
+        return -0.5*delta_muh*phi1**2 + 0.25*delta_lh*phi1**4 + (re_rho*phi2 - im_rho*phi3) - 0.5*delta_mus*phi2**2. - 0.5*delta_mua*phi3**2.
 
     def V1T(self, bosons, fermions, T, include_radiation=False):
         """
@@ -345,7 +348,7 @@ class generic_potential():
         return ch
 
     def cs(self):
-        cs = 1/12. * (2.*self.lsh + 4.*self.ls + 3.*self.yd**2)
+        cs = 1/12. * (2.*self.lsh + 4.*self.ls + self.yd**2)
         return cs
 
     def V1T_from_X(self, X, T, include_radiation=False):
@@ -367,7 +370,7 @@ class generic_potential():
         '''
         # High-T expansion
         phi1, phi2, phi3 = X[...,0], X[...,1], X[...,2]
-        y = 0.5*(self.ch()*phi1**2 + self.cs()*(phi2**2+phi3**2) + 2.**0.5/2.*self.m0*self.yd*np.cos(self.thetaY)*phi2 - 2.**0.5/2.*self.m0*self.yd*np.sin(self.thetaY)*phi3)*T**2.
+        y = 0.5*(self.ch()*phi1**2 + self.cs()*(phi2**2+phi3**2) + 2.**0.5/6.*self.m0*self.yd*np.cos(self.thetaY)*phi2 - 2.**0.5/6.*self.m0*self.yd*np.sin(self.thetaY)*phi3)*T**2.
         '''
         return y
 
@@ -794,6 +797,7 @@ class generic_potential():
                   (trans['Delta_rho'], trans['Delta_rho']**.25))
             print("Action = %0.4g" % trans['action'])
             print("Action / Tnuc = %0.6g" % (trans['action']/trans['Tnuc']))
+	    print("d(S/T)/dT at Tnuc = %0.6g" % (trans['dsdt']))
             print("")
 
     # PLOTTING ---------------------------------
@@ -910,6 +914,21 @@ class generic_potential():
 	'''
         transitionFinder.plotNuclCriterion(phases, OUT_PATH, index, self.Vtot, self.gradV)
 
+    def dSdT(self):
+	if self.TnTrans is None:
+            raise RuntimeError("self.TnTrans has not been set. "
+                "Try running self.findAllTransitions() first.")
+        if len(self.TnTrans) == 0:
+            print("No transitions for this potential.\n") 
+	for trans in self.TnTrans:
+	    try:
+	        Tnuc = trans['Tnuc']
+	        xlow = trans['low_vev']
+	        xhigh = trans['high_vev']
+	        dsdt = transitionFinder.dSdT(self.Vtot, self.gradV, xlow, xhigh, Tnuc)
+	        trans['dsdt'] = dsdt
+	    except:
+		trans['dsdt'] = 1e100
 
 # END GENERIC_POTENTIAL CLASS ------------------
 

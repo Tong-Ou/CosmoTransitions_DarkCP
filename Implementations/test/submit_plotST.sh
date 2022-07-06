@@ -1,18 +1,16 @@
 #!/bin/sh
 
-#SBATCH --time=4:00:00
-#SBATCH --job-name=scanbm
-#SBATCH --partition=cpu_gce_test
-#SBATCH --ntasks=80
-#SBATCH --qos=test
-#SBATCH --error="slurm_scan.err"
+#SBATCH --job-name=plotst
+#SBATCH --partition=cpu_gce
+#SBATCH --ntasks=1
+#SBATCH --qos=regular
 
 #This script is adapted from the example from https://rcc.uchicago.edu/docs/tutorials/kicp-tutorials/running-jobs.html.
 #module load parallel
 
 # the --exclusive to srun makes srun use distinct CPUs for each job step
 # -N1 -n1 allocates a single core to each task
-srun="srun --exclusive -N1 -n1"
+srun="srun -N1 -n1"
 
 # --delay .2 prevents overloading the controlling node
 # -j is the number of tasks parallel runs so we set it to $SLURM_NTASKS
@@ -27,12 +25,8 @@ srun="srun --exclusive -N1 -n1"
 # parallel uses ::: to separate options. Here {0..99} is a shell expansion
 # so parallel will run the command passing the numbers 0 through 99
 # via argument {1}
-FILE="outputs/full_potential_cpv/wrap_up/ma150-2"
-NPT=10000
-#$parallel "$srun python ran_scan_cpv_nompi.py {1} $SLURM_NTASKS $FILE $NPT" ::: {0..99}
-for i in {0..79}
-do
-        $srun python ran_scan_cpv_parallel.py $i $SLURM_NTASKS $FILE $NPT&
-done
-wait
-#$srun python ran_scan_cpv_parallel.py $SLURM_ARRAY_TASK_ID $SLURM_NTASKS $FILE $NPT
+NTASK=20
+FILE="outputs/full_potential_cpv/ks23000_vs100/scan_r14"
+OUTPATH="outputs/full_potential_cpv/ks23000_vs100/scan_r14_pt/full_potential"
+#$parallel "$srun python pt_cpv.py {1} $SLURM_NTASKS $FILE $OUTPATH" ::: {0..99}
+$srun python test/pt_plotST.py $NTASK $FILE $OUTPATH

@@ -1,18 +1,17 @@
 #!/bin/sh
 
-#SBATCH --time=10:00:00
+#SBATCH --time=24:00:00
 #SBATCH --job-name=calcpt
 #SBATCH --partition=cpu_gce
-#SBATCH --ntasks=3
+#SBATCH --ntasks=224
 #SBATCH --qos=regular
-#SBATCH -a 0-2
 
 #This script is adapted from the example from https://rcc.uchicago.edu/docs/tutorials/kicp-tutorials/running-jobs.html.
 #module load parallel
 
 # the --exclusive to srun makes srun use distinct CPUs for each job step
 # -N1 -n1 allocates a single core to each task
-#srun="srun -N1 -n1"
+srun="srun --exclusive -N1 -n1"
 
 # --delay .2 prevents overloading the controlling node
 # -j is the number of tasks parallel runs so we set it to $SLURM_NTASKS
@@ -27,7 +26,12 @@
 # parallel uses ::: to separate options. Here {0..99} is a shell expansion
 # so parallel will run the command passing the numbers 0 through 99
 # via argument {1}
-FILE="outputs/full_potential_cpv/ks23000_vs100/scan_r14"
-OUTPATH="outputs/full_potential_cpv/ks23000_vs100/scan_r14_pt/full_potential"
+FILE="outputs/full_potential_cpv/wrap_up/ma1to500-1"
+OUTPATH="outputs/full_potential_cpv/wrap_up/ma1to500-1_pt/full_potential/"
+mkdir -p $OUTPATH
 #$parallel "$srun python pt_cpv.py {1} $SLURM_NTASKS $FILE $OUTPATH" ::: {0..99}
-srun python pt_cpv.py $SLURM_ARRAY_TASK_ID $SLURM_NTASKS $FILE $OUTPATH
+for i in {0..223}
+do
+        $srun python pt_cpv.py $i $SLURM_NTASKS $FILE $OUTPATH&
+done
+wait
