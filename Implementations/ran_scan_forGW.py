@@ -212,15 +212,15 @@ def getscan(l2box, lmbox, mabox, ks2box, ydbox, thetaYbox, m0box, npt):
         # Why not create a np.linspace and scan one by one? - Not realistic for 5 parameters
         l1 = lh
 	vh2 = vh**2.
-	ma = ran.uniform(1e-2, 17.)
+	ma = 5. #ran.uniform(1., 17.)
 	ma2 = ma**2.
-	dm = ran.uniform(5., 30.)
+	dm = ran.uniform(5., 15.)
 	ms = ma + dm
         ks2 = (ms**2 - ma2)/4. #np.exp(ran.uniform(np.log(ks2min), np.log(ks2max)))
         thetaY = ran.uniform(thetaYmin, thetaYmax)
 	m0min = ms
-        m0 = ran.uniform(m0min, 3.*m0min)
-	yd = ran.uniform((m0/1.4e3)**0.5, (m0/1e3)**0.5)
+        m0 = 20. #ran.uniform(m0min, 2.*m0min)
+	yd = 0.13 #ran.uniform((m0/1.4e3)**0.5, (m0/1e3)**0.5)
 	v2re = 172.9**2.
 
 	#mx2bfb = m0**2 + yd**2*1e8 + np.sqrt(2)*m0*yd*1e4

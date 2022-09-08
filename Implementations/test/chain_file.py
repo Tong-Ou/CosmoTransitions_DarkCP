@@ -8,14 +8,15 @@ import sys
 import deepdish as dd
 
 ncpu = int(sys.argv[1])
-#FILE1 = sys.argv[1]
 FILE = sys.argv[2]
+#FILE2 = sys.argv[2]
+#FILE3 = sys.argv[3]
 para_list = []
 vphy_list = []
 lmin_list = []
 
 for i in range(ncpu):
-#for filename in [FILE1, FILE]:
+#for filename in [FILE, FILE2]:
     filename = '%s_%s' % (FILE, i)
     try:
         para = np.load(filename + '.npy', allow_pickle = True).tolist()

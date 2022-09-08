@@ -38,11 +38,13 @@ def categorizePt(pts):
     if pt_type == 2:
       tag += 'c'
     else:
-      if hvev/(Tc+1e-4) < .5 and lvev/(Tc+1e-4) > 1.:
+      if hvev/(Tc+1e-4) < .1 and lvev/(Tc+1e-4) > 1.:
         tag += 'a'
-      elif hvev/(Tc+1e-4) > .5 and lvev/(Tc+1e-4) >1.:
+      elif abs(hvev-lvev) < .1:
+	tag += 'c'
+      elif hvev/(Tc+1e-4) > .1 and lvev/(Tc+1e-4) > 1.:
         tag += 'bI'
-      elif lvev/(Tc+1e-4) < 1.:
+      elif hvev/(Tc+1e-4) < .1 and lvev/(Tc+1e-4) < 1.:
 	tag += 'bII'
     '''
     if lvev < 1.:
@@ -209,7 +211,7 @@ for n in range(ntasks):
       delta_rho = float(lines[i+6].split()[3])
       action = float(lines[i+8].split()[-1])
       #dsdt = 1e100
-      #dsdt = float(lines[i+9].split()[-1])
+      dsdt = float(lines[i+9].split()[-1])
 
       if high_key == highPhase or high_key in low_keys_nuc:
         if all((not(high_key in high_keys_nuc), action <= 150., action >= 130.)):
@@ -248,13 +250,17 @@ for n in range(ntasks):
       else: 	
 	tag = categorizePt(pts_nuc)
 	if tag.endswith('a'):
-	  high_s, high_a, Tnuc, delta_rho = pts_nuc[-1][6], pts_nuc[-1][7], pts_nuc[-1][4], pts_nuc[-1][10]
+	  high_s, high_a, high_h, low_s, low_a, low_h, Tnuc, delta_rho = pts_nuc[-1][6], pts_nuc[-1][7], pts_nuc[-1][2], pts_nuc[-1][8], pts_nuc[-1][9], pts_nuc[-1][3], pts_nuc[-1][4], pts_nuc[-1][10]
 	  #high_s, high_a, Tnuc, delta_rho = pts_nuc[-1][6], pts_nuc[-1][7], pts_nuc[-1][4], pts_nuc[-1][10]
 	  paras.append(high_s)
 	  paras.append(high_a)
+	  paras.append(high_h)
+	  paras.append(low_s)
+	  paras.append(low_a)
+	  paras.append(low_h)
 	  paras.append(Tnuc)
 	  paras.append(delta_rho)
-	  #paras.append(dsdt)
+	  paras.append(dsdt)
 	  for p in paras:
 	    cpv_paras.write('%s ' % p)
 	  cpv_paras.write('\n')

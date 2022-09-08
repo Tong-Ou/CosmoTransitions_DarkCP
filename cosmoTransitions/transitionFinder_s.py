@@ -894,45 +894,47 @@ def tunnelFromPhase(phases, start_phase, V, dV, Tmax, makePlot=False,
     except ValueError as err:
         if err.args[0] != "f(a) and f(b) must have different signs":
             raise
-        if nuclCriterion(outdict[Tmax]['action'], Tmax) > 0:
-            if nuclCriterion(outdict[Tmin]['action'], Tmax) < 0:
+        elif nuclCriterion(outdict[Tmax]['action'], Tmax) > 0:
+            #if nuclCriterion(outdict[Tmin]['action'], Tmax) < 0:
+		# Commented by Tong: Action doesn't have to evolve monotonically with temperature.
                 # tunneling *may* be possible. Find the minimum.
                 # It's important to make an appropriate initial guess;
                 # otherwise the minimization routine may get get stuck in a
                 # region where the action is infinite. Modify Tmax.
-		print ('f(a) and f(b) have the same signs. But tunneling is still possible. Re-determine Tmin and Tmax.')
-                Tmax = _maxTCritForPhase(phases, start_phase, V, Ttol)
-		print ('New Tmax: %s' % Tmax)
+	    print ('f(a) and f(b) have the same signs. But tunneling is still possible. Re-determine Tmin and Tmax.')
+            Tmax = _maxTCritForPhase(phases, start_phase, V, Ttol)
+            print ('New Tmax: %s' % Tmax)
 
-                def abort_fmin(T, outdict=outdict, nc=nuclCriterion):
-                    T = T[0]  # T is an array of size 1
-                    if nc(outdict[T]['action'], T) <= 0:
-                        raise StopIteration(T)
+            def abort_fmin(T, outdict=outdict, nc=nuclCriterion):
+                T = T[0]  # T is an array of size 1
+                if nc(outdict[T]['action'], T) <= 0:
+                    raise StopIteration(T)
 
-                try:
-                    badTunneling = []
-                    Tmin = optimize.fmin(_tunnelFromPhaseAtT, 0.5*(Tmin+Tmax),
+            try:
+                badTunneling = []
+                Tmin = optimize.fmin(_tunnelFromPhaseAtT, 0.5*(Tmin+Tmax),
                                          args=args, xtol=Ttol*10, ftol=1.0,
                                          maxiter=maxiter, disp=0,
                                          callback=abort_fmin)[0]
-                except StopIteration as err:
-                    Tmin = err.args[0]
-		print ('New Tmin: %s' % Tmin)
-                if nuclCriterion(outdict[Tmin]['action'], Tmin) > 0:
-                    # no tunneling possible
-		    print ('f(a) and f(b) still have the same signs. No tunneling possible.')
-                    return None
-                badTunneling = []
-                Tnuc = optimize.brentq(
+            except StopIteration as err:
+                Tmin = err.args[0]
+	    print ('New Tmin: %s' % Tmin)
+            if nuclCriterion(outdict[Tmin]['action'], Tmin) > 0:
+                # no tunneling possible
+		print ('f(a) and f(b) still have the same signs. No tunneling possible.')
+                return None
+            badTunneling = []
+            Tnuc = optimize.brentq(
                     _tunnelFromPhaseAtT, Tmin, Tmax,
                     args=args, xtol=Ttol, maxiter=maxiter, disp=False)
-            else:
+            #else:
                 # no tunneling possible
-		print ('S(Tmin) / Tmax > 140. No tunneling possible.')
-                return None
+		#print ('S(Tmin) / Tmax > 140. No tunneling possible.')
+                #return None
+		# This is assuming action decreases monotonically with T, which may not be reasonable.
         else:
             # tunneling happens right away at Tmax
-	    print ('S(Tmax) / Tmax > 140. Tunneling happens right away at Tmax.')
+	    print ('S(Tmax) / Tmax < 140. Tunneling happens right away at Tmax.')
             Tnuc = Tmax
     rdict = outdict[Tnuc]
     return rdict if rdict['trantype'] > 0 else None
@@ -1174,8 +1176,8 @@ def plotNuclCriterion(phases, OUT_PATH, index, V, dV, makePlot=False,
     # TODO: Make this less artificial
     start_phase = phases[getStartPhase(phases, V)]
     while len(phases) > 1:
-	Tmin = 100. #start_phase.T[0]
-	Tmax = 120. #start_phase.T[-1]
+	Tmin = 80. #start_phase.T[0]
+	Tmax = 110. #start_phase.T[-1]
 	del phases[start_phase.key]
     	T = np.linspace(Tmin, Tmax, 100)
     	T_plot = []
@@ -1207,7 +1209,7 @@ def plotNuclCriterion(phases, OUT_PATH, index, V, dV, makePlot=False,
 	plt.clf()
 
 def dSdT(V, dV, xlow, xhigh, Tnuc, phitol=1e-8, fullTunneling_params={}):
-    T_eps = 0.001 # Try reducing resolution because the precision for action calculation is limited.
+    T_eps = 0.5 # Try reducing resolution because the precision for action calculation is limited.
     deriv_order = 2
     if deriv_order == 2:
 	Tm = Tnuc - T_eps

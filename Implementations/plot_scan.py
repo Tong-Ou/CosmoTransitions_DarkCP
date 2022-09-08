@@ -14,8 +14,11 @@ import argparse
 import os
 
 FILE_1 = sys.argv[1]
-FILE_2 = sys.argv[2]
+#FILE_2 = sys.argv[2]
 OUTDIR = FILE_1.rsplit('/', 1)[0]
+
+plt.rc('xtick', labelsize=16) 
+plt.rc('ytick', labelsize=16)
 
 def ls_max_nontach(lsh, vh2, vs2, ks2):
     return (0.5*lsh*vh2 - 2*ks2)/vs2
@@ -48,10 +51,16 @@ def lsh_max_IIa(vsp, ma):
     lh = 0.129
     return 2*(lh*vh2/vsp**2 + ma**2/vh2)
 
-def plot_min(FILE, ma, ax, xmin, xmax, ymax):
+def calcma(vs2, ls, lsh, ks2):
+    vh2 = 246.**2
+    maList = []
+    for i, lsi in enumerate(ls):
+	ma = (0.5*lsh[i]*vh2 - lsi*vs2[i] - 2*ks2[i])**.5
+	maList.append(ma)
+    return maList
 
-    m0, yd = 80., 0.25
-    
+def plot_min(FILE, ma, ax, xmin, xmax, ymin, ymax, m0, yd):
+
     # Load data
     para_dict = dd.io.load('%s_plot.h5' % FILE)
     ls_novh, ls_nomh, ls_vh = para_dict['ls_novh'], para_dict['ls_nomh'], para_dict['ls_vh']
@@ -63,14 +72,25 @@ def plot_min(FILE, ma, ax, xmin, xmax, ymax):
 
     para_vs = dd.io.load('%s_vs.h5' % FILE)
     ls_inf, ls_vs, ls_va, ls_sa, ls_as, ls_orig, ls_none = para_vs['ls_inf'], para_vs['ls_vs'], para_vs['ls_va'], para_vs['ls_sa'], para_vs['ls_as'], para_vs['ls_orig'], para_vs['ls_none']
+    ls_va = np.concatenate([ls_va, ls_as], axis=0)
+    ls_vs = np.concatenate([ls_vs, ls_sa], axis=0)
     lsh_inf, lsh_vs, lsh_va, lsh_sa, lsh_as, lsh_orig, lsh_none = para_vs['lsh_inf'], para_vs['lsh_vs'], para_vs['lsh_va'], para_vs['lsh_sa'], para_vs['lsh_as'], para_vs['lsh_orig'], para_vs['lsh_none']
+    lsh_va = np.concatenate([lsh_va, lsh_as], axis=0)
+    lsh_vs = np.concatenate([lsh_vs, lsh_sa], axis=0)
     vs2_inf, vs2_vs, vs2_va, vs2_sa, vs2_as, vs2_orig, vs2_none = para_vs['vs2_inf'], para_vs['vs2_vs'], para_vs['vs2_va'], para_vs['vs2_sa'], para_vs['vs2_as'], para_vs['vs2_orig'], para_vs['vs2_none']
+    vs2_va = np.concatenate([vs2_va, vs2_as], axis=0)
+    vs2_vs = np.concatenate([vs2_vs, vs2_sa], axis=0)
     ks2_inf, ks2_vs, ks2_va, ks2_sa, ks2_as, ks2_orig, ks2_none = para_vs['ks2_inf'], para_vs['ks2_vs'], para_vs['ks2_va'], para_vs['ks2_sa'], para_vs['ks2_as'], para_vs['ks2_orig'], para_vs['ks2_none']
+    ks2_va = np.concatenate([ks2_va, ks2_as], axis=0)
+    ks2_vs = np.concatenate([ks2_vs, ks2_sa], axis=0)
     m0_inf, m0_vs, m0_va, m0_sa, m0_as, m0_orig, m0_none = para_vs['m0_inf'], para_vs['m0_vs'], para_vs['m0_va'], para_vs['m0_sa'], para_vs['m0_as'], para_vs['m0_orig'], para_vs['m0_none']
+    m0_va = np.concatenate([m0_va, m0_as], axis=0)
+    m0_vs = np.concatenate([m0_vs, m0_sa], axis=0)
     yd_inf, yd_vs, yd_va, yd_sa, yd_as, yd_orig, yd_none = para_vs['yd_inf'], para_vs['yd_vs'], para_vs['yd_va'], para_vs['yd_sa'], para_vs['yd_as'], para_vs['yd_orig'], para_vs['yd_none']
-
+    yd_va = np.concatenate([yd_va, yd_as], axis=0)
+    yd_vs = np.concatenate([yd_vs, yd_sa], axis=0)
     print ('Total scan rounds:')
-    print (len(ls_novh)+len(ls_nomh)+len(ls_vh)+len(ls_inf)+len(ls_vs)+len(ls_va)+len(ls_sa)+len(ls_as)+len(ls_orig)+len(ls_none))
+    print (len(ls_novh)+len(ls_nomh)+len(ls_vh)+len(ls_inf)+len(ls_vs)+len(ls_va)+len(ls_orig)+len(ls_none))
     # Draw tree-level boundaries
     '''
     ls_min, ls_max = None, None
@@ -85,15 +105,15 @@ def plot_min(FILE, ma, ax, xmin, xmax, ymax):
     size = 10.
     evenly_spaced_interval = range(8)
     colors = [plt.cm.Dark2(x) for x in evenly_spaced_interval]
+    cm = {"inf": colors[2], "vsva": colors[0], "vh": [80,0,0]}
  
-    ma_vh = []   
-    for i in range(len(lsh_vh)):
-	ma = (0.5*lsh_vh[i]*246**2-ls_vh[i]*vs2_vh[i]-2*ks2_vh[i])**.5
-	ma_vh.append(ma)
-
     figma = plt.figure(figsize=(8,6))
     axma = figma.add_subplot(111)
-    axma.scatter(ma_vh, lsh_vh, s=size, c='red', label='Meet BC')
+    axma.scatter(calcma(vs2_inf, ls_inf, lsh_inf, ks2_inf), lsh_inf, s=size, c=cm["inf"], alpha=0.5, label='Potential not bounded from below')
+    axma.scatter(calcma(vs2_va, ls_va, lsh_va, ks2_va), lsh_va, s=size, c=cm["vsva"], alpha=0.5, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0), |a|>|s|$')
+    axma.scatter(calcma(vs2_vs, ls_vs, lsh_vs, ks2_vs), lsh_vs, s=size, c=cm["vsva"], alpha=0.5, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0), |s|>|a|$')
+    axma.scatter(calcma(vs2_none, ls_none, lsh_none, ks2_none), lsh_none, s=size, c=colors[7], alpha=0.8, label=r'Other global minimum')
+    axma.scatter(calcma(vs2_vh, ls_vh, lsh_vh, ks2_vh), lsh_vh, s=size, c=(0.7,0,0), label='Satisfy T=0 boundary conditions')
     axma.legend(fontsize=10, loc='upper right', bbox_to_anchor=(1, 1))
     axma.set_xlabel(r'$m_a\ [GeV]$', size=15)
     axma.set_ylabel(r'$\lambda_{SH}$', size=15)
@@ -104,42 +124,44 @@ def plot_min(FILE, ma, ax, xmin, xmax, ymax):
     #ax1, ax2 = fig.add_subplot(121), fig.add_subplot(122)
     #ax.scatter(np.sqrt(vs2_novh+2*np.divide(ks2_novh,ls_novh)), lsh_novh, s=size, c='grey', alpha=0.5, label='Higgs vev is not a minimum')
     #ax.scatter(np.sqrt(vs2_nomh+2*np.divide(ks2_nomh,ls_nomh)), lsh_nomh, s=size, c='black', alpha=0.8, label=r'$m_h|_{(v_H,0,0)}\neq 125GeV$')
-    ax.scatter(np.sqrt(vs2_inf+2*np.divide(ks2_inf,ls_inf)), lsh_inf, s=size, c=colors[0], alpha=0.5, label='Potential not bounded from below')
-    ax.scatter(np.sqrt(vs2_va+2*np.divide(ks2_va,ls_va)), lsh_va, s=size, c='cyan', alpha=0.8, label=r'$V(0,0,a)<V(h,0,0), |a|>0$')
-    ax.scatter(np.sqrt(vs2_vs+2*np.divide(ks2_vs,ls_vs)), lsh_vs, s=size, c=colors[2], alpha=0.8, label=r'$V(0,s,0)<V(h,0,0), |s|>0$')
-    ax.scatter(np.sqrt(vs2_sa+2*np.divide(ks2_sa,ls_sa)), lsh_sa, s=size, c=colors[3], alpha=0.8, label=r'$V(0,s,a)<V(h,0,0), |s|>|a|>0$')
-    ax.scatter(np.sqrt(vs2_as+2*np.divide(ks2_as,ls_as)), lsh_as, s=size, c=colors[5], alpha=0.5, label=r'$V(0,s,a)<V(h,0,0), |a|>|s|>0$')
-    ax.scatter(np.sqrt(vs2_orig+2*np.divide(ks2_orig,ls_orig)), lsh_orig, s=size, c='pink', alpha=0.8, label=r'$V(0,0,0)<V(h,0,0)$')
-    ax.scatter(np.sqrt(vs2_none+2*np.divide(ks2_none,ls_none)), lsh_none, s=size, c='gray', alpha=0.8, label=r'Other global minimum')
-    ax.scatter(np.sqrt(vs2_vh+2*np.divide(ks2_vh,ls_vh)), lsh_vh, s=size, c='red', label='Satisfy T=0 boundary conditions')
-    ax.plot(vspr, [lsh_min_bfb(vsp, m0, yd, ma) for vsp in vspr], c='blue', linewidth = 2.0, label=r'$\lambda_{SH,min}$ from BFB')
-    ax.plot(vspr, [lsh_max_IIa(vsp, ma) for vsp in vspr], c='orange', linewidth = 2.0, label=r'$\lambda_{SH,max}$ from 4(a)')
+    
+    ax.scatter(np.sqrt(vs2_inf+2*np.divide(ks2_inf,ls_inf)), lsh_inf, s=size, c=cm["inf"], alpha=0.6, label='Potential not bounded from below')
+    ax.scatter(np.sqrt(vs2_va+2*np.divide(ks2_va,ls_va)), lsh_va, s=size, c=cm["vsva"], alpha=0.6, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0)$')
+    ax.scatter(np.sqrt(vs2_vs+2*np.divide(ks2_vs,ls_vs)), lsh_vs, s=size, c=cm["vsva"], alpha=0.6)
+    #ax.scatter(np.sqrt(vs2_none+2*np.divide(ks2_none,ls_none)), lsh_none, s=size, c=colors[7], alpha=0.8, label=r'Other global minimum')
+    ax.scatter(np.sqrt(vs2_vh+2*np.divide(ks2_vh,ls_vh)), lsh_vh, s=size, c=(0.8,0,0), label='Satisfy T=0 boundary conditions')
+    '''
+    ax.scatter(ls_inf, lsh_inf, s=size, c=colors[0], alpha=0.5, label='Potential not bounded from below')
+    ax.scatter(ls_va, lsh_va, s=size, c='cyan', alpha=0.8, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0), |a|>|s|$')
+    ax.scatter(ls_vs, lsh_vs, s=size, c=colors[2], alpha=0.8, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0), |s|>|a|$')
+    ax.scatter(ls_none, lsh_none, s=size, c='gray', alpha=0.8, label=r'Other global minimum')
+    ax.scatter(ls_vh, lsh_vh, s=size, c='red', label='Satisfy T=0 boundary conditions')
+    '''
+    ax.plot(vspr, [lsh_min_bfb(vsp, m0, yd, ma) for vsp in vspr], c='blue', linewidth = 2.5, label=r'$\lambda_{SH}^{min}$ from C1')
+    ax.plot(vspr, [lsh_max_IIa(vsp, ma) for vsp in vspr], c='peru', linewidth = 2.5, label=r'$\lambda_{SH}^{max}$ from C2')
     ax.set_xlim(xmin, xmax)
-    ax.set_ylim(5e-3, ymax)
-    ax.set_title(r'$m_a=$%sGeV' % int(ma))
-    ax.set_xlabel(r'$v^{\prime}_S$ [GeV]', size=16)
+    ax.set_ylim(ymin, ymax)
+    #ax.set_title(r'$m_a=$%sGeV, $m_0=$%sGeV, $\lambda=$%s' % (int(ma), int(m0), round(yd,2)), size=16)
+    ax.set_xlabel(r'$v^\prime_S$ [GeV]', size=16)
     ax.set_ylabel(r'$\lambda_{SH}$', size=16)
     #plt.savefig('%s_vsp_lsh_2.pdf' % (FILE))
     
-    '''
+    
     fig2 = plt.figure(figsize=(12,6))
     spec2 = gridspec.GridSpec(ncols=2, nrows=1, width_ratios=[2,1])
     ax2 = fig2.add_subplot(spec2[0,0])
     #ax2.scatter(m0_novh, yd_novh, s=size, c='grey', alpha=0.5, label='Wrong Higgs vev')
     #ax2.scatter(m0_nomh, yd_nomh, s=size, c='black', alpha=0.5, label='Wrong Higgs mass')
-    ax2.scatter(m0_inf, yd_inf, s=size, c=colors[0], alpha=0.5, label='Potential not bounded from below')
-    ax2.scatter(m0_va, yd_va, s=size, c='cyan', alpha=0.5, label=r'$V(0,0,a)<V(h,0,0), |a|>0$')
-    ax2.scatter(m0_vs, yd_vs, s=size, c=colors[2], alpha=0.5, label=r'$V(0,s,0)<V(h,0,0), |s|>0$')
-    ax2.scatter(m0_sa, yd_sa, s=size, c=colors[3], alpha=0.7, label=r'$V(0,s,a)<V(h,0,0), |s|>|a|>0$')
-    ax2.scatter(m0_as, yd_as, s=size, c=colors[5], alpha=0.7, label=r'$V(0,s,a)<V(h,0,0), |a|>|s|>0$')
-    ax2.scatter(m0_orig, yd_orig, s=size, c=colors[7], alpha=0.5, label=r'$V(0,0,0)<V(h,0,0)$')
-    #ax2.scatter(m0_none, yd_none, s=size, c=colors[6], alpha=0.5, label=r'Wrong global minimum')
+    ax2.scatter(m0_inf, yd_inf, s=size, c=cm["inf"], alpha=0.5, label='Potential not bounded from below')
+    ax2.scatter(m0_va, yd_va, s=size, c=cm["vsva"], alpha=0.5, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0), |a|>|s|$')
+    ax2.scatter(m0_vs, yd_vs, s=size, c=cm["vsva"], alpha=0.5, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0), |s|>|a|$')
+   #ax2.scatter(m0_none, yd_none, s=size, c=colors[6], alpha=0.5, label=r'Wrong global minimum')
     ax2.scatter(m0_vh, yd_vh, s=size, c='red', label='Satisfy T=0 boundary conditions')
     ax2.legend(fontsize=10, loc='upper right', bbox_to_anchor=(1.55, 1))
     ax2.set_xlabel(r'$m_0\ [GeV]$', size=15)
     ax2.set_ylabel(r'$\lambda$', size=15)
     plt.savefig('%s_m0_yd.pdf' % (FILE))
-    '''
+    
 
 #===================================================
 #Main function
@@ -149,13 +171,13 @@ spec = gridspec.GridSpec(ncols=2, nrows=2, height_ratios=[3,1])
 ax1, ax2 = fig.add_subplot(spec[0,0]), fig.add_subplot(spec[0,1])
 ax_leg = fig.add_subplot(spec[1, 0:])
 ax_leg.axis('off')
-plot_min(FILE_1, 15, ax1, 600., 2000., 0.03)
-plot_min(FILE_2, 150, ax2, 10., 700., 8.)
-handles, labels = ax2.get_legend_handles_labels()
+plot_min(FILE_1, 5, ax1, 1000., 2500., 2*5**2/246.**2, 0.01, 20, 0.13)
+#plot_min(FILE_2, 150, ax2, 10., 500., 1e-4, 8., 200., 0.4)
+handles, labels = ax1.get_legend_handles_labels()
 #fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.2, -0.27), ncol=4)
 #fig.savefig("%s/ma15-150_vsp_lsh.pdf" % OUTDIR)
 #fig_leg = plt.figure(figsize=(14,2))
 #ax = fig_leg.add_subplot(111)
 #ax.axis('off')
-ax_leg.legend(handles, labels, bbox_to_anchor=(1.05, 1.0), ncol=3, fontsize=14)
-fig.savefig("%s/ma15-150_vsp_lsh.pdf" % OUTDIR)
+ax_leg.legend(handles, labels, bbox_to_anchor=(0.9, 1.0), ncol=2, fontsize=15)
+fig.savefig("%s_vsp_lsh.pdf" % FILE_1)

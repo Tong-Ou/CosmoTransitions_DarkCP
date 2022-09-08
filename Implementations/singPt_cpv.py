@@ -32,13 +32,17 @@ import deepdish as dd
 FILE = sys.argv[1]
 OUT_PATH = sys.argv[2]
 
+logfile = '%s/pt.log' % (OUT_PATH)
+log = open(logfile, 'w')
+sys.stdout = log
+
 #if not os.path.isdir(OUT_PATH):
  #   os.makedirs(OUT_PATH)
 
 filename = '%s.npy' % FILE
 paras = np.load(filename, allow_pickle = True)
 vphys = np.load(FILE + '_vphy.npy', allow_pickle = True)
-index = 1
+index = 960
 para = paras[index]
 print('The parameters are:')
 print( 'Index: %s vh2:%s vs2:%s lh:%s ls:%s lsh:%s ks2:%s yd:%s thetaY:%s m0:%s v2re:%s' % (index, para[0],para[1],para[2],para[3],para[4],para[5],para[6],para[7],para[8],para[9]))
@@ -93,7 +97,7 @@ plt.clf()
 print("\n \n")
     
 print("Now let's find the corresponding tunneliings:")
-    
+''' 
 try:
     mt.findAllTransitions(vphy, zeroTLocalMin)
 except KeyError as err:
@@ -111,4 +115,4 @@ print("\n \n All the tunnelings/phase transitions of such a model are")
 mt.prettyPrintTnTrans()
 '''    
 mt.plotNuclCriterion(phases, OUT_PATH, index)
-'''
+
