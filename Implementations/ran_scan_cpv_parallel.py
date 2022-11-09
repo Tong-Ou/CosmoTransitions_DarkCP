@@ -3,15 +3,14 @@
 """
 Created on Sun Feb 11 17:10:18 2018
 
-@author: Tong Ou (adapted from Yikun's codes)
+@author: Tong Ou (modified from Yikun's codes)
 """
 
 """
 In this module, we create a scaning over the parameter space (ms, sint, tanb) which enters the model 
 defined and used in the module baseMo.py
 
-We create a dictionary containing the parameter info and the 1st order phase transition info, including 
-critical temperature, high low T vevs, and the phase transition strength. 
+We create a dictionary containing the parameter info and the zero temperature local minima info. 
 
 Usage functions are created to print/plot the scaning. 
 """
@@ -46,34 +45,17 @@ numtasks = int(sys.argv[2])
 
 FILE = sys.argv[3]
 
+npt = int(sys.argv[4])
+
 t0 = time.clock()
 
-#lhr = [0.01,0.05]
-#For tree-level potential, lh=mh^2/2vH^2
+#Fixed parameters
 lh = 0.129
 vh = 246.
 
-lsr = [1e-5, 0.03] #[0.001, 4.]
-
-lshr = [1e-4, 0.015] #[1e-4, 0.03] #[0.01, 1.]
-
-mar = [1., 500.]
-
-ks2r = [1e3, 1e5]
-
-#ydr = [1e-2, 10.]
-ydr = [1e-2, 0.25]
-thetaYr = [0., np.pi/2.]
-
-m0r = [10., 1500.]
-#m0r = [1e-3, 100.]
-
-vsr = [0.1, 50.]
-
-npt = int(sys.argv[4])
-
 BASE_PATH = os.getcwd()
 
+#Bounds from T=0 boundary conditions
 def ls_max(lh, vh2, vs2, ks2):
     if lh**2*vh2**4-8.*lh*vh2**2*ks2*vs2 >= 0:
 	ls_max = (lh*vh2**2-4.*ks2*vs2+np.sqrt(lh**2*vh2**4-8.*lh*vh2**2*ks2*vs2))/(2.*vs2**2)
@@ -84,6 +66,7 @@ def ls_max(lh, vh2, vs2, ks2):
 def ls_min(lh, vh2, ma2, lsh):
     return (-2*ma2+lsh*vh2)**2./(4*lh*vh2**2)
 
+#Check whether the higgs vacuum is the global minimum
 def physpara(m):
     print ('\n')
     print ('ls:%s lsh:%s vs2:%s ks2:%s m0:%s yd:%s thetaYd:%s ' % (m.ls, m.lsh, m.vs2, m.ks2, m.m0, m.yd, m.thetaY))
@@ -96,7 +79,6 @@ def physpara(m):
         d2V_exp = m.d2V([246.,0.,0.], T=0.)
         m2sq_exp, eig_exp = np.linalg.eig(d2V_exp)
         print ('\n')
-        #print ('First derivative at expected Higgs minimum: %s' % gradV_exp)
         print ('Mass eigenvalues at expected Higgs minimum: %s' % m2sq_exp)
 	# Note that the eigenvalues returned by np.linalg.eig might not be sorted in a particular order!!!
         if any((m2sq_exp[0]<0, m2sq_exp[1]<0, m2sq_exp[2]<0)):
@@ -107,13 +89,6 @@ def physpara(m):
             return 3
     else:
         m2phys = m.d2V(vp, T=0.)
-        #mh2 = -m.lh*m.vh2+3.*m.lh*vp[0]**2.+0.5*m.lsh*(vp[1]**2.+vp[2]**2.)
-        #ms2 = -m.ls*m.vs2+3.*m.ls*vp[1]**2.+m.ls*vp[2]**2.+0.5*m.lsh*vp[0]**2.+2.*m.ks2
-        #ma2 = -m.ls*m.vs2+3.*m.ls*vp[2]**2.+m.ls*vp[1]**2.+0.5*m.lsh*vp[0]**2.-2.*m.ks2
-        #msh2 = m.lsh*vp[0]*vp[1]
-        #msa2 = 2.*m.ls*vp[1]*vp[2]
-        #mah2 = m.lsh*vp[0]*vp[2]
-        #m2phys = np.array([[mh2, msh2, mah2],[msh2, ms2, msa2],[mah2, msa2, ma2]], dtype=float)
         m2physd, eigv = np.linalg.eig(m2phys)
         # Minimum found by python is normally a real minimum, here is a double check.
         if any((m2physd[0] < 0., m2physd[1] < 0., m2physd[2] < 0.)):
@@ -146,39 +121,12 @@ def physpara(m):
                             pass
                         minX.append(lmin)
    
-            
-            '''
-            tanbphy = vp[1]/vp[0]
-            
-            if any((m1phy == None, eigv == None)):
-
-                m1phy = 0.
-
-                sintphy = 0.
-            
-            else:
-
-                sintphy = eigv[0][1]
-            '''
             print ('T=0 boundary conditions met! Recording BM...')
             return [vp, m1phy, minX]
         
         
-def getscan(l2box, lmbox, mabox, ks2box, ydbox, thetaYbox, m0box, npt):
- 
-   # l1min,l1max = l1box
-    l2min, l2max = l2box
-    lmmin, lmmax = lmbox
-    mamin, mamax = mabox
-    ks2min, ks2max = ks2box
-    #m12min, m12max = m12box
-    #vsmin, vsmax = vsbox
-    ydmin, ydmax = ydbox
-    thetaYmin, thetaYmax = thetaYbox
-    m0min, m0max = m0box
-    #chmin, chmax = chbox
-    #csmin, csmax = csbox
-        
+def getscan(npt):
+       
     scan_task = range(npt)
     
     #rank = comm.Get_rank()
@@ -188,7 +136,6 @@ def getscan(l2box, lmbox, mabox, ks2box, ydbox, thetaYbox, m0box, npt):
     scan_rank, vphy_list, lmin_list = [], [], []
                 
     ran.seed(time.time())
-    #plt.figure(figsize=(12,5))
 
     ls_novh, lsh_novh, vs2_novh, ks2_novh, yd_novh, thetaY_novh, m0_novh = [], [], [], [], [], [], []
     ls_nomh, lsh_nomh, vs2_nomh, ks2_nomh, yd_nomh, thetaY_nomh, m0_nomh = [], [], [], [], [], [], []
@@ -200,32 +147,20 @@ def getscan(l2box, lmbox, mabox, ks2box, ydbox, thetaYbox, m0box, npt):
     sys.stdout = log 
         
     for n in range(len(scan_task[rank:npt:numtasks])):
-	'''
-        logfile = '%s/%s_%s.log' % (BASE_PATH, FILE, rank)
-        if n==rank and os.path.exists(logfile):
-            os.remove(logfile) 
-	log = open(logfile, 'a')
-        sys.stdout = log
-	'''
 
-        # Tong: generate random number between the given min and max
-        # Why not create a np.linspace and scan one by one? - Not realistic for 5 parameters
-        l1 = lh
+	l1 = lh
 	vh2 = vh**2.
-	ma = ran.uniform(1e-2, 17.)
+	ma = ran.uniform(1, 10.)
 	ma2 = ma**2.
-	dm = ran.uniform(5., 30.)
+	dm = ran.uniform(5., 35.)
 	ms = ma + dm
         ks2 = (ms**2 - ma2)/4. #np.exp(ran.uniform(np.log(ks2min), np.log(ks2max)))
-        thetaY = ran.uniform(thetaYmin, thetaYmax)
+        thetaY = ran.uniform(0., np.pi/2)
 	m0min = ms
         m0 = ran.uniform(m0min, 3.*m0min)
 	yd = ran.uniform((m0/1.4e3)**0.5, (m0/1e3)**0.5)
 	v2re = 172.9**2.
 
-	#mx2bfb = m0**2 + yd**2*1e8 + np.sqrt(2)*m0*yd*1e4
-	#lsbfb = yd**4/(16*np.pi**2)*(np.log(mx2bfb/v2re) - 1.5)
-	#vspmax = (l1/lsbfb)**0.25*vh
 	vsp = ran.uniform(1.0e3, 2.5e3)
 
         lshmin = 2*ma2/vh2
@@ -298,7 +233,7 @@ def getscan(l2box, lmbox, mabox, ks2box, ydbox, thetaYbox, m0box, npt):
         dd.io.save(filename, para_dict)
 
 if __name__ == "__main__":   
-    getscan(lsr, lshr, mar, ks2r, ydr, thetaYr, m0r, npt)
+    getscan(npt)
     tf = time.clock()
     dt = tf-t0
     print ('Run time: %s' % dt)

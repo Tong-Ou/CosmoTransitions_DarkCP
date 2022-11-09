@@ -5,7 +5,7 @@
 """
 Created on Fri Feb  9 20:33:49 2018
 
-@author: Tong Ou (modified from Yikun's codes)
+@author: Tong Ou (adapted from Yikun's codes)
 """
 
 import matplotlib
@@ -18,7 +18,7 @@ import os
 import time
 
 #import baseMo_s_t as bmt
-import baseMo_s_cpv as bmt
+import baseMo_s_tree_cpv as bmt
 
 import numpy as np
 import deepdish as dd
@@ -59,14 +59,26 @@ else:
     np.save('%s.npy' % FILE, paras)
 vphys = np.load(FILE + '_vphy.npy', allow_pickle = True)
 lmins = np.load(FILE + '_localMin.npy', allow_pickle = True)
+#fig = plt.figure()
 
 scan_task = range(len(paras))
+'''
+#For GW
+nucList = open('%s/pt_nucList.dat' % OUT_PATH, 'r')
+line = nucList.readlines()[0]
+indexList = line.split()
+scan_task = []
+for index in indexList:
+    scan_task.append(int(index))
+#scan_task = [40, 1, 63, 44, 25, 47, 57, 17]
+'''
 rank_task = scan_task[rank:len(scan_task):numtasks]
 logfile = '%s/pt_%s.log' % (OUT_PATH, rank)
 log = open(logfile, 'w')
 sys.stdout = log
 phase_dict = {}
 
+#rank_task = [162, 462]
 for index in rank_task:
 
     para = paras[index]
@@ -77,9 +89,11 @@ for index in rank_task:
 	print ('ls > 4 Pi, skipping...')
 	continue    
     mt = bmt.model(para[0],para[1],para[2],para[3],para[4],para[5],para[6],para[7],para[8],para[9])
+    #print (mt.Vtot([100.,100.,100.], T=0.))
     
     vphy = vphys[index]
     zeroTLocalMin = np.array([[246., 0., 0.], [0., 0., abs(mt.vs2+2.*mt.ks2/mt.ls)**0.5], [1e-5, 1e-5, 1e-5]])
+    #zeroTLocalMin = lmins[index]
     
     print("\n")
     print("\n")
@@ -127,6 +141,13 @@ for index in rank_task:
     plt.savefig('%s/vs_va_%s.pdf' % (OUT_PATH, index))
     plt.clf()
     
+    """
+    Note: to be completed: 
+    models may have probolems calculating tunneling (possibly due to the strength of phase transitions).
+    We need Tc info instead of Tn info. 
+    So such a step shall be neglected at this point.
+    """
+
     print("\n \n")
     
     print("Now let's find the corresponding tunneliings:")

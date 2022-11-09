@@ -14,7 +14,7 @@ import argparse
 import os
 
 FILE_1 = sys.argv[1]
-#FILE_2 = sys.argv[2]
+FILE_2 = sys.argv[2]
 OUTDIR = FILE_1.rsplit('/', 1)[0]
 
 plt.rc('xtick', labelsize=16) 
@@ -25,27 +25,21 @@ def ls_max_nontach(lsh, vh2, vs2, ks2):
 
 def ls_max_IIc(lsh, lh):
     return lsh**2./(4*lh)
-'''
-def ls_range_IIa(lh, vh2, vs2, ks2):
-    if lh**2*vh2**4-8.*lh*vh2**2*ks2*vs2 >=0:
-        ls_min = (lh*vh2**2-4.*ks2*vs2-np.sqrt(lh**2*vh2**4-8.*lh*vh2**2*ks2*vs2))/(2.*vs2**2)
-        ls_max = (lh*vh2**2-4.*ks2*vs2+np.sqrt(lh**2*vh2**4-8.*lh*vh2**2*ks2*vs2))/(2.*vs2**2)
-        return [ls_min, ls_max]
-    else:
-        return None
-'''
+
 def ls_min_IIa(lsh):
     ma2 = 10.**2
     lh = 0.129
     vh2 = 246.**2
     return (-2*ma2 + lsh*vh2)**2./(4*lh*vh2**2)
 
+# C1
 def lsh_min_bfb(vsp, m0, yd, ma):
     vh2 = 246.**2
     mt = 172.9
     md2 = m0**2+yd**2*10**8+np.sqrt(2)*m0*yd*10**4
     return 2/vh2*(yd**4*vsp**2/(16*np.pi**2)*(np.log(md2/mt**2)-3/2)+ma**2)
 
+# C2
 def lsh_max_IIa(vsp, ma):
     vh2 = 246.**2
     lh = 0.129
@@ -91,27 +85,20 @@ def plot_min(FILE, ma, ax, xmin, xmax, ymin, ymax, m0, yd):
     yd_vs = np.concatenate([yd_vs, yd_sa], axis=0)
     print ('Total scan rounds:')
     print (len(ls_novh)+len(ls_nomh)+len(ls_vh)+len(ls_inf)+len(ls_vs)+len(ls_va)+len(ls_orig)+len(ls_none))
-    # Draw tree-level boundaries
-    '''
-    ls_min, ls_max = None, None
-    ls_lim = ls_range_IIa(lh, vh2, vs2, ks2)
-    if ls_lim is not None:
-        ls_min = ls_lim[0] * np.ones(100)
-        ls_max = ls_lim[1] * np.ones(100)
-    '''
+
     vspr = np.linspace(xmin, xmax, 100)
         
     # Plot args
     size = 10.
     evenly_spaced_interval = range(8)
     colors = [plt.cm.Dark2(x) for x in evenly_spaced_interval]
-    cm = {"inf": colors[2], "vsva": colors[0], "vh": [80,0,0]}
+    cm = {"inf": "blue", "vsva": "gray", "vh": [80,0,0]}
  
     figma = plt.figure(figsize=(8,6))
     axma = figma.add_subplot(111)
-    axma.scatter(calcma(vs2_inf, ls_inf, lsh_inf, ks2_inf), lsh_inf, s=size, c=cm["inf"], alpha=0.5, label='Potential not bounded from below')
-    axma.scatter(calcma(vs2_va, ls_va, lsh_va, ks2_va), lsh_va, s=size, c=cm["vsva"], alpha=0.5, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0), |a|>|s|$')
-    axma.scatter(calcma(vs2_vs, ls_vs, lsh_vs, ks2_vs), lsh_vs, s=size, c=cm["vsva"], alpha=0.5, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0), |s|>|a|$')
+    axma.scatter(calcma(vs2_inf, ls_inf, lsh_inf, ks2_inf), lsh_inf, s=size, c=cm["inf"], alpha=0.6, label='Potential not bounded from below')
+    axma.scatter(calcma(vs2_va, ls_va, lsh_va, ks2_va), lsh_va, s=size, c=cm["vsva"], alpha=0.6, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0), |a|>|s|$')
+    axma.scatter(calcma(vs2_vs, ls_vs, lsh_vs, ks2_vs), lsh_vs, s=size, c=cm["vsva"], alpha=0.6, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0), |s|>|a|$')
     axma.scatter(calcma(vs2_none, ls_none, lsh_none, ks2_none), lsh_none, s=size, c=colors[7], alpha=0.8, label=r'Other global minimum')
     axma.scatter(calcma(vs2_vh, ls_vh, lsh_vh, ks2_vh), lsh_vh, s=size, c=(0.7,0,0), label='Satisfy T=0 boundary conditions')
     axma.legend(fontsize=10, loc='upper right', bbox_to_anchor=(1, 1))
@@ -125,23 +112,17 @@ def plot_min(FILE, ma, ax, xmin, xmax, ymin, ymax, m0, yd):
     #ax.scatter(np.sqrt(vs2_novh+2*np.divide(ks2_novh,ls_novh)), lsh_novh, s=size, c='grey', alpha=0.5, label='Higgs vev is not a minimum')
     #ax.scatter(np.sqrt(vs2_nomh+2*np.divide(ks2_nomh,ls_nomh)), lsh_nomh, s=size, c='black', alpha=0.8, label=r'$m_h|_{(v_H,0,0)}\neq 125GeV$')
     
-    ax.scatter(np.sqrt(vs2_inf+2*np.divide(ks2_inf,ls_inf)), lsh_inf, s=size, c=cm["inf"], alpha=0.6, label='Potential not bounded from below')
+    ax.scatter(np.sqrt(vs2_inf+2*np.divide(ks2_inf,ls_inf)), lsh_inf, s=size, c=cm["inf"], alpha=0.4, label='Potential not bounded from below')
     ax.scatter(np.sqrt(vs2_va+2*np.divide(ks2_va,ls_va)), lsh_va, s=size, c=cm["vsva"], alpha=0.6, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0)$')
     ax.scatter(np.sqrt(vs2_vs+2*np.divide(ks2_vs,ls_vs)), lsh_vs, s=size, c=cm["vsva"], alpha=0.6)
     #ax.scatter(np.sqrt(vs2_none+2*np.divide(ks2_none,ls_none)), lsh_none, s=size, c=colors[7], alpha=0.8, label=r'Other global minimum')
-    ax.scatter(np.sqrt(vs2_vh+2*np.divide(ks2_vh,ls_vh)), lsh_vh, s=size, c=(0.8,0,0), label='Satisfy T=0 boundary conditions')
-    '''
-    ax.scatter(ls_inf, lsh_inf, s=size, c=colors[0], alpha=0.5, label='Potential not bounded from below')
-    ax.scatter(ls_va, lsh_va, s=size, c='cyan', alpha=0.8, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0), |a|>|s|$')
-    ax.scatter(ls_vs, lsh_vs, s=size, c=colors[2], alpha=0.8, label=r'$V(0,\langle s\rangle,\langle a\rangle)<V(v_H,0,0), |s|>|a|$')
-    ax.scatter(ls_none, lsh_none, s=size, c='gray', alpha=0.8, label=r'Other global minimum')
-    ax.scatter(ls_vh, lsh_vh, s=size, c='red', label='Satisfy T=0 boundary conditions')
-    '''
-    ax.plot(vspr, [lsh_min_bfb(vsp, m0, yd, ma) for vsp in vspr], c='blue', linewidth = 2.5, label=r'$\lambda_{SH}^{min}$ from C1')
-    ax.plot(vspr, [lsh_max_IIa(vsp, ma) for vsp in vspr], c='peru', linewidth = 2.5, label=r'$\lambda_{SH}^{max}$ from C2')
+    ax.scatter(np.sqrt(vs2_vh+2*np.divide(ks2_vh,ls_vh)), lsh_vh, s=size, c=(0.8,0,0),alpha=0.4, label='Satisfy T=0 boundary conditions')
+
+    ax.plot(vspr, [lsh_min_bfb(vsp, m0, yd, ma) for vsp in vspr], c='mediumblue', linewidth = 3.3, label=r'$\lambda_{SH}^{min}$ from C1')
+    ax.plot(vspr, [lsh_max_IIa(vsp, ma) for vsp in vspr], c='dimgray', linewidth = 3.3, label=r'$\lambda_{SH}^{max}$ from C2')
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(ymin, ymax)
-    #ax.set_title(r'$m_a=$%sGeV, $m_0=$%sGeV, $\lambda=$%s' % (int(ma), int(m0), round(yd,2)), size=16)
+    ax.set_title(r'$m_a=$%sGeV, $m_0=$%sGeV, $\lambda=$%s' % (int(ma), int(m0), round(yd,2)), size=16)
     ax.set_xlabel(r'$v^\prime_S$ [GeV]', size=16)
     ax.set_ylabel(r'$\lambda_{SH}$', size=16)
     #plt.savefig('%s_vsp_lsh_2.pdf' % (FILE))
@@ -172,7 +153,7 @@ ax1, ax2 = fig.add_subplot(spec[0,0]), fig.add_subplot(spec[0,1])
 ax_leg = fig.add_subplot(spec[1, 0:])
 ax_leg.axis('off')
 plot_min(FILE_1, 5, ax1, 1000., 2500., 2*5**2/246.**2, 0.01, 20, 0.13)
-#plot_min(FILE_2, 150, ax2, 10., 500., 1e-4, 8., 200., 0.4)
+plot_min(FILE_2, 150, ax2, 10., 500., 1e-4, 8., 200., 0.4)
 handles, labels = ax1.get_legend_handles_labels()
 #fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.2, -0.27), ncol=4)
 #fig.savefig("%s/ma15-150_vsp_lsh.pdf" % OUTDIR)
@@ -180,4 +161,4 @@ handles, labels = ax1.get_legend_handles_labels()
 #ax = fig_leg.add_subplot(111)
 #ax.axis('off')
 ax_leg.legend(handles, labels, bbox_to_anchor=(0.9, 1.0), ncol=2, fontsize=15)
-fig.savefig("%s_vsp_lsh.pdf" % FILE_1)
+fig.savefig("%s/ma5-150_vsp_lsh.png" % OUTDIR)

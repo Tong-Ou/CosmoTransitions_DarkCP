@@ -15,19 +15,9 @@ import os
 import baseMo_s_cpv as bmt
 
 FILE = sys.argv[1]
-#FILE2 = sys.argv[2]
 para_dict = dd.io.load('%s_plot.h5' % FILE)
 para_dict_nuc = dd.io.load('%s_plot_nuc.h5' % FILE)
-#para_dict_2 = dd.io.load('%s_plot.h5' % FILE2)
-#para_dict_nuc_2 = dd.io.load('%s_plot_nuc.h5' % FILE2)
-'''
-for key in para_dict.keys():
-    try:
-        para_dict[key].extend(para_dict_2[key])
-        para_dict_nuc[key].extend(para_dict_nuc_2[key])
-    except:
-        continue
-'''
+
 def lshMin(ls, ma):
     vh2 = 246.**2
     lh = 0.129

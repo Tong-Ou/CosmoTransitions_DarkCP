@@ -3,5 +3,6 @@ Implementations/outputs/*
 *.out
 *.err
 *log
+*.pdf
 *.pyc
 .DS_Store

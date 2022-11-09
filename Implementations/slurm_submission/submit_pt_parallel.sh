@@ -26,8 +26,8 @@ srun="srun --exclusive -N1 -n1"
 # parallel uses ::: to separate options. Here {0..99} is a shell expansion
 # so parallel will run the command passing the numbers 0 through 99
 # via argument {1}
-FILE="outputs/full_potential_cpv/wrap_up/ma1e-2to17"
-OUTPATH="outputs/full_potential_cpv/wrap_up/ma1e-2to17_pt/full_potential/"
+FILE="outputs/full_potential_cpv/wrap_up/ma1to10"
+OUTPATH="outputs/full_potential_cpv/wrap_up/ma1to10_pt/full_potential/"
 mkdir -p $OUTPATH
 #$parallel "$srun python pt_cpv.py {1} $SLURM_NTASKS $FILE $OUTPATH" ::: {0..99}
 for i in {0..319}

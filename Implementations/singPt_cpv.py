@@ -5,7 +5,7 @@
 """
 Created on Fri Feb  9 20:33:49 2018
 
-@author: Tong Ou (adapted from Yikun's codes)
+@author: Tong Ou (modified from Yikun's codes)
 """
 
 import matplotlib
